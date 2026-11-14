@@ -1,0 +1,50 @@
+name: Deploy KxCraft informational site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'site/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kxcraft-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the clean public repository
+        uses: actions/checkout@v6
+      - name: Enforce the public-site allowlist
+        shell: bash
+        run: |
+          expected=$(printf '%s\n' index.html assets/app.js assets/site.css | LC_ALL=C sort)
+          actual=$(find site -type f -printf '%P\n' | LC_ALL=C sort)
+          diff -u <(printf '%s\n' "$expected") <(printf '%s\n' "$actual")
+          grep -q 'aria-disabled="true"' site/index.html
+          grep -q 'KxCraft.zip' site/index.html
+          ! find site -type f \( -iname '*.jar' -o -iname '*.zip' -o -iname '*.toml' -o -iname '*.mca' \) -print -quit | grep -q .
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload only the informational site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site/
+      - name: Deploy the verified Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
