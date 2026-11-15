@@ -1,0 +1,8 @@
+name = "Create: Enchantment Industry"
+filename = "create-enchantment-industry-2.4.2.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/JWGBpFUP/versions/qUpvzZ83/create-enchantment-industry-2.4.2.jar"
+hash-format = "sha256"
+hash = "81f192bb53888e01f87a82eaac2f261c93715f2221dbcf5d8a8d414f912f75ef"

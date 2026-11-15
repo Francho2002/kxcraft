@@ -1,0 +1,8 @@
+name = "Create: Copper & Zinc"
+filename = "create_copper_and_zinc-2.0.0-neoforge-1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/aqYNR6rI/versions/1Z1LCW5Z/create_copper_and_zinc-2.0.0-neoforge-1.21.1.jar"
+hash-format = "sha256"
+hash = "1882e3102771ed2db4ba7f62c0b500d7a40e4d2c1823700c2fa55a75b77359f9"

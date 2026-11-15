@@ -1,0 +1,8 @@
+name = "Camerapture"
+filename = "Camerapture-1.10.12+mc1.21.1-neoforge.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/9dzLWnmZ/versions/bCB7PwmA/Camerapture-1.10.12%2Bmc1.21.1-neoforge.jar"
+hash-format = "sha256"
+hash = "053e003d136876bbde786a701e504495a47e48cf3cd176d2ab29120ce99d92d2"

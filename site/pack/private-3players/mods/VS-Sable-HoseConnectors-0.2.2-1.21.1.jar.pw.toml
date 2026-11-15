@@ -1,0 +1,8 @@
+name = "VS / Sable Hose Connectors"
+filename = "VS-Sable-HoseConnectors-0.2.2-1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/VS-Sable-HoseConnectors-0.2.2-1.21.1.jar"
+hash-format = "sha256"
+hash = "3c856ad8357157749e9ac3f2a3ae9c75113db146af3c510eef5794a17239b758"

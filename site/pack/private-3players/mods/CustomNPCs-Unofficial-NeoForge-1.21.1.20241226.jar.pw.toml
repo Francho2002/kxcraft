@@ -1,0 +1,8 @@
+name = "CustomNPCs-Unofficial"
+filename = "CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/vFAmwl6B/versions/5gdSEvLv/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar"
+hash-format = "sha256"
+hash = "06edf28bb7b1887fa67eef6b3fa5db7a969bbbd4647cfe3db8838c68b11a3211"

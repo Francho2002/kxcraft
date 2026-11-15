@@ -1,0 +1,8 @@
+name = "Aeronautics: simulated copycats"
+filename = "sim_copycats-1.3.2.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/NYBH9vVY/versions/6zbD44Qe/sim_copycats-1.3.2.jar"
+hash-format = "sha256"
+hash = "c0f1017f76118a283fcf0ebdd371c2f7bee2ac56b11c7459efdfa6a42fe9c5af"

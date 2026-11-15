@@ -1,4 +1,4 @@
-name: Deploy KxCraft informational site
+name: Deploy KxCraft informational site and Packwiz
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'site/**'
+      - '.github/scripts/Validate-GitHubPagesPackwizSnapshot.ps1'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -28,23 +29,18 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Check out the clean public repository
+      - name: Check out the public repository
         uses: actions/checkout@v6
-      - name: Enforce the public-site allowlist
-        shell: bash
+      - name: Validate informational site and immutable Packwiz release
+        shell: pwsh
         run: |
-          expected=$(printf '%s\n' index.html assets/app.js assets/site.css | LC_ALL=C sort)
-          actual=$(find site -type f -printf '%P\n' | LC_ALL=C sort)
-          diff -u <(printf '%s\n' "$expected") <(printf '%s\n' "$actual")
-          grep -q 'aria-disabled="true"' site/index.html
-          grep -q 'KxCraft.zip' site/index.html
-          ! find site -type f \( -iname '*.jar' -o -iname '*.zip' -o -iname '*.toml' -o -iname '*.mca' \) -print -quit | grep -q .
+          ./.github/scripts/Validate-GitHubPagesPackwizSnapshot.ps1 -SiteRoot ./site
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-      - name: Upload only the informational site
+      - name: Upload only the verified site and Packwiz manifests
         uses: actions/upload-pages-artifact@v4
         with:
           path: site/
-      - name: Deploy the verified Pages artifact
+      - name: Deploy verified Pages artifact
         id: deployment
         uses: actions/deploy-pages@v4

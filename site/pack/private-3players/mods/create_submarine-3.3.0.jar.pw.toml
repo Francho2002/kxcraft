@@ -1,0 +1,8 @@
+name = "Create Deep Seas [BETA]"
+filename = "create_submarine-3.3.0.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/mva5q4qZ/versions/8CV1LRTl/create_submarine-3.3.0.jar"
+hash-format = "sha256"
+hash = "99709e004c8a7a36cb3439c0200ffd0c8ff5d7ca4fb77d49f76395d803864ba1"

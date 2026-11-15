@@ -1,0 +1,8 @@
+name = "Create Military Integration"
+filename = "create-military-integration-0.1.0-dev.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/5c6f0018e9fac6003ec0948d0fd6bf721982ed28/binaries/mods/create-military-integration-0.1.0-dev.jar"
+hash-format = "sha256"
+hash = "8ad901b6c5986e13c1be455795c45dc9346cdd22fb2e9987d40d8af52a443134"

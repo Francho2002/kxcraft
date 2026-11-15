@@ -1,0 +1,8 @@
+name = "[Let's Do] Furniture"
+filename = "letsdo-furniture-neoforge-1.1.10.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/3JQDJrYW/versions/FxbGZtS6/letsdo-furniture-neoforge-1.1.10.jar"
+hash-format = "sha256"
+hash = "c1677c358626307bc7578d71febc3500e37437ac15a304abe794886f1d0151f7"

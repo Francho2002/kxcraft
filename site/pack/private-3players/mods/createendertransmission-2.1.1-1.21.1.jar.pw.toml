@@ -1,0 +1,8 @@
+name = "Create: Ender Transmission"
+filename = "createendertransmission-2.1.1-1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/wtW8g4TG/versions/eI9pk5JC/createendertransmission-2.1.1-1.21.1.jar"
+hash-format = "sha256"
+hash = "13f237796ba51312a385ebd55b252c55598d49bcf677ea68f0bfb9bd88c23b63"
