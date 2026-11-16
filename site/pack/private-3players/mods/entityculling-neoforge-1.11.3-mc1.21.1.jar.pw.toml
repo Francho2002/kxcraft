@@ -1,4 +1,4 @@
-name = "Entity Culling"
+name = "EntityCulling"
 filename = "entityculling-neoforge-1.11.3-mc1.21.1.jar"
 side = "client"
 
