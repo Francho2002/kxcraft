@@ -76,6 +76,11 @@ hash = "dffdae0a4553ef383dcb54bf8bf413c175232edce767715077f5a563a68218af"
 metafile = true
 
 [[files]]
+file = "mods/camera-neoforge-1.21.1-1.0.22.jar.pw.toml"
+hash = "714304d267f575ac2f0d9dc6f13e1471b23bea19be2e54d31abeca94486f8e80"
+metafile = true
+
+[[files]]
 file = "mods/Camerapture-1.10.12+mc1.21.1-neoforge.jar.pw.toml"
 hash = "1991e5486085e23d153d9d144e645073c8fdcd40092ecdd30e823f8b42a62bc9"
 metafile = true
@@ -591,6 +596,11 @@ hash = "af8888f94f71d65a15722f515e86d9677014d5d62355fbd75ff562ea309a1ea7"
 metafile = true
 
 [[files]]
+file = "mods/Paraglider-neoforge-21.1.5.jar.pw.toml"
+hash = "2ba3574dd11f0cb83b46dfa5968f477bfba28462a24c7301a9110227608d8b0b"
+metafile = true
+
+[[files]]
 file = "mods/Paxi-1.21.1-NeoForge-5.1.3.jar.pw.toml"
 hash = "0f3f2c0411de3cf289706b345f3bbd39073b90e001695ea27ce9cdb5df8283a1"
 metafile = true
@@ -631,6 +641,16 @@ hash = "e972ad9599e996b549d7ff5b4e784de7703f509b4cb6755ce4740e91443cde54"
 metafile = true
 
 [[files]]
+file = "mods/ragdoll_corpse-1.21.1-0.4.0.jar.pw.toml"
+hash = "f49eb0d1df547e7babdcb023fd63dc5b83d4c26fce2345ebc0d4c6f63ca33445"
+metafile = true
+
+[[files]]
+file = "mods/ragdoll_reactions-1.21.1-0.8.0.jar.pw.toml"
+hash = "8438c9b322855e57cb9c524fe479ba3214aeab14b73d5c9ff0f2542aa903e8cd"
+metafile = true
+
+[[files]]
 file = "mods/railways-0.2.1+neoforge-mc1.21.1.jar.pw.toml"
 hash = "b0f089ab85c73c2cd6abf0ba20e29dabc9a135c08a1f066ccfaaa966e82cba25"
 metafile = true
@@ -658,6 +678,11 @@ metafile = true
 [[files]]
 file = "mods/ritchiesprojectilelib-2.1.2+mc.1.21.1-neoforge.jar.pw.toml"
 hash = "59660825803642ec2233d3df27a03c2918157e6672be452a6fb982702b022b86"
+metafile = true
+
+[[files]]
+file = "mods/sable_player_ragdoll-1.21.1-0.8.1.jar.pw.toml"
+hash = "464a4689259cf0bd00ea22305aef111e89ed5845db2ea77c757de606ac329537"
 metafile = true
 
 [[files]]
@@ -778,6 +803,11 @@ metafile = true
 [[files]]
 file = "mods/yarl-1.21.x-1.1-NEOFORGE.jar.pw.toml"
 hash = "7a144142a4bb54bcdc02ea9745681b3c5e2d3dba309f967dfbe42db88d23b782"
+metafile = true
+
+[[files]]
+file = "mods/yourstruly-neoforge-1.0.1+mc1.21.1.jar.pw.toml"
+hash = "e139da5b06250865f3c1b88480669c3ba90d55ece559e94955a1b6727de171a4"
 metafile = true
 
 [[files]]
