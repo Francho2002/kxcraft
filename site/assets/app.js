@@ -11,7 +11,10 @@
   const dialogTitle = document.getElementById("dialog-title");
   const dialogDescription = document.getElementById("dialog-description");
   const dialogCategory = document.getElementById("dialog-category");
+  const dialogPlacement = document.getElementById("dialog-placement");
+  const dialogPlacementNote = document.getElementById("dialog-placement-note");
   const dialogMedia = document.getElementById("dialog-media");
+  const distributionSummary = document.getElementById("distribution-summary");
   if (!dataNode || !grid || !filterRoot || !queryInput || !countNode || !emptyNode) return;
 
   let mods;
@@ -37,6 +40,12 @@
 
   const categories = [...new Set(mods.map((mod) => mod.category))];
   let selectedCategory = "Todos";
+
+  const placementLabels = {
+    "client-profile": "En el perfil cliente",
+    "client-and-server": "En cliente y servidor",
+    "server-only": "Solo en el servidor de KxCraft"
+  };
 
   const makeElement = (tag, className, text) => {
     const element = document.createElement(tag);
@@ -67,8 +76,25 @@
     dialogTitle.textContent = mod.name;
     dialogDescription.textContent = mod.description;
     dialogCategory.textContent = mod.category;
+    if (dialogPlacement) dialogPlacement.textContent = placementLabels[mod.placement] || "";
+    if (dialogPlacementNote) {
+      dialogPlacementNote.textContent = mod.placementNote || "";
+      dialogPlacementNote.hidden = !mod.placementNote;
+    }
     dialogMedia.replaceChildren(makeIcon(mod, true));
     dialog.showModal();
+  }
+
+  function drawDistributionSummary() {
+    if (!distributionSummary) return;
+    const clientCount = mods.filter((mod) => ["client-profile", "client-and-server"].includes(mod.placement)).length;
+    const serverCount = mods.filter((mod) => ["server-only", "client-and-server"].includes(mod.placement)).length;
+    const sharedCount = mods.filter((mod) => mod.placement === "client-and-server").length;
+    distributionSummary.replaceChildren(
+      makeElement("span", "distribution-counter", "Cliente · " + clientCount),
+      makeElement("span", "distribution-counter", "Servidor · " + serverCount),
+      makeElement("span", "distribution-counter-note", "Compartidos · " + sharedCount)
+    );
   }
 
   function drawFilters() {
@@ -106,6 +132,9 @@
       text.append(makeElement("span", "mod-category", mod.category));
       top.append(text);
       card.append(top);
+      if (mod.placement && mod.placement !== "client-profile") {
+        card.append(makeElement("span", "placement-tag", placementLabels[mod.placement] || "Distribución especial"));
+      }
       if (mod.featured) card.append(makeElement("span", "featured-tag", "Destacado"));
       card.append(makeElement("span", "mod-description", mod.description));
       card.append(makeElement("span", "card-open", "Ver detalle →"));
@@ -126,5 +155,6 @@
     }
   });
   drawFilters();
+  drawDistributionSummary();
   drawMods();
 })();

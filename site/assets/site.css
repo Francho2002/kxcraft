@@ -188,6 +188,9 @@ h1 span { color: var(--gold); }
 .mods-heading { margin-bottom: 17px; }
 .mods-heading h2 { font-size: clamp(29px, 3.4vw, 42px); }
 #results-count { min-height: 1.5em; text-align: right; }
+.distribution-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 17px; }
+.distribution-counter { padding: 5px 9px; color: var(--text); background: rgba(25, 29, 23, .76); border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 700; }
+.distribution-counter-note { color: var(--soft); font-size: 11px; }
 .catalog-tools { margin-bottom: 18px; }
 .search-box {
   max-width: 580px;
@@ -278,6 +281,9 @@ kbd {
 .mod-description { flex: 1 0 auto; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .card-open { display: block; margin-top: auto; padding-top: 12px; color: var(--soft); font-size: 11px; }
 .mod-card > .featured-tag { width: fit-content; margin: -4px 0 9px 53px; padding: 2px 6px; color: #cfb781; background: rgba(232, 201, 145, .045); border: 1px solid var(--line); border-radius: 4px; font-size: 8px; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; }
+.placement-tag { width: fit-content; max-width: 100%; margin: -3px 0 8px 53px; padding: 3px 7px; color: #b4df9c; background: rgba(147, 194, 119, .08); border: 1px solid rgba(147, 194, 119, .25); border-radius: 5px; font-size: 9px; line-height: 1.35; }
+.dialog-placement { margin: 12px 0 0; color: var(--green); font-size: 12px; font-weight: 700; }
+.dialog-placement-note { margin: 6px 0 0; padding: 9px 10px; color: var(--muted); background: rgba(25, 29, 23, .75); border-left: 2px solid var(--gold); font-size: 12px; line-height: 1.5; }
 .empty-state { padding: 24px; color: var(--muted); text-align: center; border: 1px dashed var(--line); border-radius: 8px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
