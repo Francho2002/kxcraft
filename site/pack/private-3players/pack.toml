@@ -1,6 +1,6 @@
 name = "KxCraft Private 3 Players"
 author = "KxCraft"
-version = "1.0.6"
+version = "1.0.7"
 pack-format = "packwiz:1.1.0"
 
 [versions]
@@ -10,4 +10,4 @@ neoforge = "21.1.265"
 [index]
 file = "index.toml"
 hash-format = "sha256"
-hash = "75bd9a8109c2de7385902d5f0f700f0c471c84ced8cd70a7264d1519eec17bf8"
+hash = "55c40b15c8d24bc6dd833b35b4ac52170bed859203cfc4a62821913cc3714cd5"
