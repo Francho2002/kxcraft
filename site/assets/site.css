@@ -743,6 +743,38 @@ kbd {
   line-height: 1.75;
 }
 
+.kx-setup-list {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0 25px;
+  padding: 0;
+  list-style: none;
+}
+
+.kx-setup-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  color: var(--kx-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.kx-setup-list li > span {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--kx-line);
+  color: var(--kx-gold);
+  font-size: 10px;
+}
+
+.kx-setup-list p {
+  margin: 1px 0 0;
+}
+
 .kx-panel-button {
   min-height: 53px;
   display: flex;
