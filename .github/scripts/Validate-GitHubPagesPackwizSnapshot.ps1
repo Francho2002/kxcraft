@@ -1,5 +1,5 @@
-# Source baseline: Francho2002/kxcraft/.github/scripts/Validate-GitHubPagesPackwizSnapshot.ps1
-# Adapted for dynamic Packwiz releases; keep security gates tied to actual content.
+# KxCraft Pages release gate. Validates the immutable 1.0.8 channel and the
+# signed managed channel without publishing private files or binary payloads.
 [CmdletBinding()]
 param(
     [string]$SiteRoot = 'site',
@@ -10,14 +10,25 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $root = [IO.Path]::GetFullPath($SiteRoot)
-$packRoot = Join-Path $root 'pack\private-3players'
+$channels = @('private-3players', 'managed-3players')
+$publicWebFiles = @(
+    'index.html',
+    'mods.html',
+    'tienda.html',
+    'assets/app.js',
+    'assets/site.css',
+    'assets/schematics.js',
+    'assets/kxcraft-airship-fortress.jpg',
+    'assets/kxcraft-hero-airship.jpg',
+    'assets/kxcraft-island-workshop.jpg'
+)
 
 function Assert([bool]$Condition, [string]$Message) {
     if (!$Condition) { throw $Message }
 }
 
 function Get-Sha256([string]$Path) {
-    (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    (Get-FileHash -LiteralPath $Path -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
 }
 
 function Get-TomlString([string]$Text, [string]$Name) {
@@ -41,161 +52,185 @@ function Get-RelativeFile([string]$Base, [string]$Path) {
     return $full.Substring($prefix.Length).Replace('\', '/')
 }
 
-function Assert-AllowedPackPath([string]$Relative) {
+function Assert-AllowedPackPath([string]$Relative, [string]$Channel) {
     if ($Relative -match '(^|/)\.\.?(/|$)' -or $Relative.Contains(':') -or $Relative.StartsWith('/')) {
         throw "Unsafe Packwiz path: $Relative"
     }
-    if ($Relative -match '^pack/private-3players/(pack\.toml|index\.toml|release\.json)$') { return }
-    if ($Relative -match '^pack/private-3players/mods/[^/]+\.jar\.pw\.toml$') { return }
-    if ($Relative -match '^pack/private-3players/(config|defaultconfigs)/[^/]+\.toml$') { return }
-    if ($Relative -ceq 'pack/private-3players/servers.dat') { return }
+    $prefix = '^pack/' + [regex]::Escape($Channel) + '/'
+    $subPath = $Relative -replace $prefix, ''
+    if ($subPath -match '^(pack\.toml|index\.toml|release\.json)$') { return }
+    if ($subPath -match '^mods/[^/]+\.jar\.pw\.toml$') { return }
+    if ($subPath -match '^(config|defaultconfigs)/[^/]+\.toml$') { return }
+    if ($subPath -ceq 'servers.dat') { return }
     throw "Unexpected public Packwiz path: $Relative"
 }
 
-Assert (Test-Path -LiteralPath $packRoot -PathType Container) 'Packwiz snapshot directory is missing.'
-$publicWebFiles = @(
-    'index.html',
-    'mods.html',
-    'tienda.html',
-    'assets/app.js',
-    'assets/site.css',
-    'assets/schematics.js',
-    'assets/kxcraft-airship-fortress.jpg',
-    'assets/kxcraft-hero-airship.jpg',
-    'assets/kxcraft-island-workshop.jpg'
-)
-foreach ($required in $publicWebFiles) {
-    Assert (Test-Path -LiteralPath (Join-Path $root $required) -PathType Leaf) "Required public web file is missing: $required"
-}
-
-$allFiles = @(Get-ChildItem -LiteralPath $root -Recurse -File -Force)
-foreach ($file in $allFiles) {
-    Assert (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0) "Symlink/reparse point is forbidden in Pages content: $($file.FullName)"
-}
-$actual = @($allFiles | ForEach-Object { Get-RelativeFile $root $_.FullName } | Sort-Object -Culture 'en-US')
-foreach ($path in $actual) {
-    Assert ($path -notmatch '(?i)(^|/)(\.env|.*\.key|.*\.p12|.*\.pem)$') "Private/secret-like file is forbidden: $path"
-    Assert ($path -notmatch '(?i)\.(jar|zip|mca|nbt)$') "Binary/world archive is forbidden in Pages: $path"
-    if ($path -ceq 'pack/private-3players/servers.dat') { continue }
-    if ($path -notin $publicWebFiles) { Assert-AllowedPackPath $path }
-}
-
-$packPath = Join-Path $packRoot 'pack.toml'
-$indexPath = Join-Path $packRoot 'index.toml'
-$gatePath = Join-Path $packRoot 'release.json'
-foreach ($path in @($packPath, $indexPath, $gatePath)) { Assert (Test-Path -LiteralPath $path -PathType Leaf) "Required Packwiz control file missing: $path" }
-
-$packText = [IO.File]::ReadAllText($packPath)
-$indexText = [IO.File]::ReadAllText($indexPath)
-$gate = Get-Content -LiteralPath $gatePath -Raw | ConvertFrom-Json
-$packVersion = Get-TomlString $packText 'version'
-$releaseVersion = [string]$gate.releaseVersion
-Assert ($packVersion -match '^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$') "Pack version is not a valid version string: $packVersion"
-Assert ($releaseVersion -ceq $packVersion) 'release.json version does not match pack.toml.'
-Assert ((Get-TomlString $packText 'pack-format') -ceq 'packwiz:1.1.0') 'Unexpected Packwiz format.'
-Assert ((Get-TomlString $packText 'minecraft') -ceq '1.21.1') 'Unexpected Minecraft version.'
-Assert ((Get-TomlString $packText 'neoforge') -ceq '21.1.265') 'Unexpected NeoForge version.'
-Assert ((Get-TomlString $packText 'file') -ceq 'index.toml') 'pack.toml must reference index.toml.'
-Assert ((Get-TomlString $packText 'hash-format') -ceq 'sha256') 'pack.toml index hash format must be SHA-256.'
-Assert ((Get-TomlString $indexText 'hash-format') -ceq 'sha256') 'index.toml must use SHA-256.'
-
-$indexHash = Get-TomlString $packText 'hash'
-Assert ($indexHash -match '^[0-9a-f]{64}$') 'index.toml hash is malformed.'
-Assert ((Get-Sha256 $indexPath) -ceq $indexHash) 'index.toml SHA-256 does not match pack.toml.'
-Assert ($gate.schemaVersion -eq 1 -and ($gate.state -ceq 'PUBLISHED' -or ($AllowCandidate -and $gate.state -ceq 'CANDIDATE'))) 'Release gate is not PUBLISHED (candidate validation is opt-in only for local review).'
-Assert ($gate.packTomlUrl -ceq 'https://francho2002.github.io/kxcraft/pack/private-3players/pack.toml') 'Release gate manifest URL mismatch.'
-Assert ($gate.packTomlSha256 -ceq (Get-Sha256 $packPath)) 'release.json does not pin pack.toml.'
-Assert ($gate.exactSourceBlockerCount -eq 0 -and $gate.zipSeededPreservedModCount -eq 0) 'Release gate reports unresolved or locally preserved mods.'
-Assert ($gate.rawBinaryCommit -match '^[0-9a-f]{40}$') 'Release gate rawBinaryCommit is not a full immutable SHA.'
-Assert ($gate.sourceMapSha256 -match '^[0-9a-f]{64}$') 'Release gate source-map hash is malformed.'
-
-$entries = Get-TomlBlocks $indexText
-Assert ($entries.Count -gt 0) 'index.toml has no entries.'
-$expected = @{
-    'index.html' = $true
-    'mods.html' = $true
-    'tienda.html' = $true
-    'assets/app.js' = $true
-    'assets/site.css' = $true
-    'assets/schematics.js' = $true
-    'assets/kxcraft-airship-fortress.jpg' = $true
-    'assets/kxcraft-hero-airship.jpg' = $true
-    'assets/kxcraft-island-workshop.jpg' = $true
-    'pack/private-3players/pack.toml' = $true
-    'pack/private-3players/index.toml' = $true
-    'pack/private-3players/release.json' = $true
-}
-$seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-$seenJars = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-$providers = @{ github = 0; modrinth = 0; curseforge = 0 }
-$modCount = 0
-
-foreach ($block in $entries) {
-    $relative = Get-TomlString $block 'file'
-    Assert-AllowedPackPath ("pack/private-3players/" + $relative)
-    $isMeta = ([regex]::Match($block, '(?m)^metafile\s*=\s*true\s*$')).Success
-    Assert ($seen.Add($relative)) "Duplicate Packwiz index path: $relative"
-    $entryHash = Get-TomlString $block 'hash'
-    Assert ($entryHash -match '^[0-9a-f]{64}$') "Malformed index hash: $relative"
-    $entryPath = [IO.Path]::GetFullPath((Join-Path $packRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))))
-    $rootPrefix = [IO.Path]::GetFullPath($packRoot)
-    if (!$rootPrefix.EndsWith([IO.Path]::DirectorySeparatorChar)) { $rootPrefix += [IO.Path]::DirectorySeparatorChar }
-    Assert ($entryPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) "Index path escapes Packwiz root: $relative"
-    Assert (Test-Path -LiteralPath $entryPath -PathType Leaf) "Missing indexed file: $relative"
-    Assert ((Get-Sha256 $entryPath) -ceq $entryHash) "Indexed file hash mismatch: $relative"
-    $expected["pack/private-3players/$relative"] = $true
-
-    if (!$isMeta) {
-        Assert ($relative -notmatch '^mods/') "Non-metafile mod downloads are forbidden: $relative"
-        continue
-    }
-
-    Assert ($relative -match '^mods/[^/]+\.jar\.pw\.toml$') "Unexpected metafile path: $relative"
-    $metaText = [IO.File]::ReadAllText($entryPath)
-    Assert ((Get-TomlString $metaText 'side') -ceq 'client') "Non-client Packwiz entry: $relative"
-    Assert (!(($metaText -match '(?im)^\[update\]\s*$'))) "Marketplace update block is forbidden: $relative"
-    Assert ((Get-TomlString $metaText 'hash-format') -ceq 'sha256') "JAR hash format is not SHA-256: $relative"
-    $jarHash = Get-TomlString $metaText 'hash'
-    Assert ($jarHash -match '^[0-9a-f]{64}$') "Malformed JAR hash: $relative"
-    $filename = Get-TomlString $metaText 'filename'
-    Assert ($filename -match '^[^<>:"/\\|?*]+\.jar$') "Unsafe JAR filename: $relative"
-    Assert ($relative -ceq "mods/$filename.pw.toml") "Metafile filename/path mismatch: $relative"
-    Assert ($seenJars.Add($filename)) "Duplicate managed JAR filename: $filename"
-    $url = Get-TomlString $metaText 'url'
+function Get-Provider([string]$Url, [string]$Relative) {
     $uri = $null
-    Assert ([Uri]::TryCreate($url, [UriKind]::Absolute, [ref]$uri)) "Invalid download URL: $relative"
-    Assert ($uri.Scheme -ceq 'https' -and $uri.IsDefaultPort -and !$uri.UserInfo -and !$uri.Query -and !$uri.Fragment) "Download URL must be clean HTTPS: $relative"
+    Assert ([Uri]::TryCreate($Url, [UriKind]::Absolute, [ref]$uri)) "Invalid download URL: $Relative"
+    Assert ($uri.Scheme -ceq 'https' -and $uri.IsDefaultPort -and !$uri.UserInfo -and !$uri.Query -and !$uri.Fragment) "Download URL must be clean HTTPS: $Relative"
     $decoded = [Uri]::UnescapeDataString($uri.AbsolutePath)
-
     switch -CaseSensitive ($uri.Host.ToLowerInvariant()) {
         'raw.githubusercontent.com' {
-            Assert ($decoded -match '^/Francho2002/kxcraft/[0-9a-f]{40}/binaries/mods/[^/]+\.jar$') "GitHub URL must pin a full KxCraft commit: $relative"
-            $providers.github++
+            Assert ($decoded -match '^/Francho2002/kxcraft/[0-9a-f]{40}/binaries/mods/[^/]+\.jar$') "GitHub URL must pin a full KxCraft commit: $Relative"
+            return 'github'
         }
         'cdn.modrinth.com' {
-            Assert ($decoded -match '^/data/[A-Za-z0-9_-]+/versions/[A-Za-z0-9_-]+/[^/]+\.jar$') "Modrinth URL must be version-pinned: $relative"
-            $providers.modrinth++
+            Assert ($decoded -match '^/data/[A-Za-z0-9_-]+/versions/[A-Za-z0-9_-]+/[^/]+\.jar$') "Modrinth URL must be version-pinned: $Relative"
+            return 'modrinth'
         }
         { $_ -in @('edge.forgecdn.net', 'mediafilez.forgecdn.net') } {
-            Assert ($decoded -match '^/files/[0-9]{1,4}/[0-9]{1,4}/[^/]+\.jar$') "CurseForge URL must be file-pinned: $relative"
-            $providers.curseforge++
+            Assert ($decoded -match '^/files/[0-9]{1,4}/[0-9]{1,4}/[^/]+\.jar$') "CurseForge URL must be file-pinned: $Relative"
+            return 'curseforge'
         }
-        default { throw "Unapproved mod source host $($uri.Host): $relative" }
+        default { throw "Unapproved mod source host $($uri.Host): $Relative" }
     }
-    $modCount++
 }
 
-Assert ($gate.modCount -eq $modCount) "Release gate modCount=$($gate.modCount) but manifest contains $modCount mod JARs."
-if ($null -ne $gate.PSObject.Properties['indexEntryCount']) {
-    Assert ($gate.indexEntryCount -eq $entries.Count) "Release gate indexEntryCount=$($gate.indexEntryCount) but index.toml contains $($entries.Count) entries."
+function Test-PackChannel([string]$Channel, [hashtable]$ExpectedFiles) {
+    $packRoot = Join-Path $root ('pack\' + $Channel)
+    Assert (Test-Path -LiteralPath $packRoot -PathType Container) "Packwiz channel directory is missing: $Channel"
+    $packPath = Join-Path $packRoot 'pack.toml'
+    $indexPath = Join-Path $packRoot 'index.toml'
+    $gatePath = Join-Path $packRoot 'release.json'
+    foreach ($path in @($packPath, $indexPath, $gatePath)) { Assert (Test-Path -LiteralPath $path -PathType Leaf) "Required Packwiz control file is missing: $path" }
+
+    $packText = [IO.File]::ReadAllText($packPath)
+    $indexText = [IO.File]::ReadAllText($indexPath)
+    $gate = Get-Content -LiteralPath $gatePath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    $packVersion = Get-TomlString $packText 'version'
+    Assert ($packVersion -match '^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$') "Pack version is invalid in $Channel."
+    Assert ([string]$gate.releaseVersion -ceq $packVersion) "release.json version mismatch in $Channel."
+    Assert ((Get-TomlString $packText 'pack-format') -ceq 'packwiz:1.1.0') "Unexpected Packwiz format in $Channel."
+    Assert ((Get-TomlString $packText 'minecraft') -ceq '1.21.1') "Unexpected Minecraft version in $Channel."
+    Assert ((Get-TomlString $packText 'neoforge') -ceq '21.1.265') "Unexpected NeoForge version in $Channel."
+    Assert ((Get-TomlString $packText 'file') -ceq 'index.toml') "pack.toml must reference index.toml in $Channel."
+    Assert ((Get-TomlString $packText 'hash-format') -ceq 'sha256') "pack.toml must use SHA-256 in $Channel."
+    Assert ((Get-TomlString $indexText 'hash-format') -ceq 'sha256') "index.toml must use SHA-256 in $Channel."
+    $indexHash = Get-TomlString $packText 'hash'
+    Assert ($indexHash -match '^[0-9a-f]{64}$') "index.toml hash is malformed in $Channel."
+    Assert ((Get-Sha256 $indexPath) -ceq $indexHash) "index.toml hash mismatch in $Channel."
+    Assert ($gate.schemaVersion -eq 1 -and ($gate.state -ceq 'PUBLISHED' -or ($AllowCandidate -and $gate.state -ceq 'CANDIDATE'))) "Release gate is not PUBLISHED in $Channel."
+    Assert ([string]$gate.packTomlUrl -ceq "https://francho2002.github.io/kxcraft/pack/$Channel/pack.toml") "Release gate URL mismatch in $Channel."
+    Assert ([string]$gate.packTomlSha256 -ceq (Get-Sha256 $packPath)) "release.json does not pin pack.toml in $Channel."
+    Assert ([int]$gate.exactSourceBlockerCount -eq 0 -and [int]$gate.zipSeededPreservedModCount -eq 0) "Release gate contains unresolved or locally preserved mods in $Channel."
+    Assert ([string]$gate.rawBinaryCommit -match '^[0-9a-f]{40}$') "Release gate rawBinaryCommit is not immutable in $Channel."
+    Assert ([string]$gate.sourceMapSha256 -match '^[0-9a-f]{64}$') "Release gate source-map hash is malformed in $Channel."
+
+    $ExpectedFiles["pack/$Channel/pack.toml"] = $true
+    $ExpectedFiles["pack/$Channel/index.toml"] = $true
+    $ExpectedFiles["pack/$Channel/release.json"] = $true
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $seenJars = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $providers = @{ github = 0; modrinth = 0; curseforge = 0 }
+    $modCount = 0
+    $entries = Get-TomlBlocks $indexText
+    Assert ($entries.Count -gt 0) "index.toml has no entries in $Channel."
+
+    foreach ($block in $entries) {
+        $relative = Get-TomlString $block 'file'
+        Assert-AllowedPackPath ("pack/$Channel/" + $relative) $Channel
+        $isMeta = ([regex]::Match($block, '(?m)^metafile\s*=\s*true\s*$')).Success
+        Assert ($seen.Add($relative)) "Duplicate Packwiz index path in $Channel`: $relative"
+        $entryHash = Get-TomlString $block 'hash'
+        Assert ($entryHash -match '^[0-9a-f]{64}$') "Malformed index hash in $Channel`: $relative"
+        $entryPath = [IO.Path]::GetFullPath((Join-Path $packRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))))
+        $rootPrefix = [IO.Path]::GetFullPath($packRoot)
+        if (!$rootPrefix.EndsWith([IO.Path]::DirectorySeparatorChar)) { $rootPrefix += [IO.Path]::DirectorySeparatorChar }
+        Assert ($entryPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) "Index path escapes $Channel`: $relative"
+        Assert (Test-Path -LiteralPath $entryPath -PathType Leaf) "Missing indexed file in $Channel`: $relative"
+        Assert ((Get-Sha256 $entryPath) -ceq $entryHash) "Indexed file hash mismatch in $Channel`: $relative"
+        $ExpectedFiles["pack/$Channel/$relative"] = $true
+
+        if (!$isMeta) {
+            Assert ($relative -notmatch '^mods/') "Non-metafile mod download is forbidden in $Channel`: $relative"
+            continue
+        }
+        Assert ($relative -match '^mods/[^/]+\.jar\.pw\.toml$') "Unexpected metafile path in $Channel`: $relative"
+        $metaText = [IO.File]::ReadAllText($entryPath)
+        Assert ((Get-TomlString $metaText 'side') -ceq 'client') "Non-client Packwiz entry in $Channel`: $relative"
+        Assert (!(($metaText -match '(?im)^\[update\]\s*$'))) "Marketplace update block is forbidden in $Channel`: $relative"
+        Assert ((Get-TomlString $metaText 'hash-format') -ceq 'sha256') "JAR hash format is not SHA-256 in $Channel`: $relative"
+        Assert ((Get-TomlString $metaText 'hash') -match '^[0-9a-f]{64}$') "Malformed JAR SHA-256 in $Channel`: $relative"
+        $filename = Get-TomlString $metaText 'filename'
+        Assert ($filename -match '^[^<>:"/\\|?*]+\.jar$') "Unsafe JAR filename in $Channel`: $relative"
+        Assert ($relative -ceq "mods/$filename.pw.toml") "Metafile filename/path mismatch in $Channel`: $relative"
+        Assert ($seenJars.Add($filename)) "Duplicate managed JAR filename in $Channel`: $filename"
+        $provider = Get-Provider (Get-TomlString $metaText 'url') $relative
+        $providers[$provider]++
+        $modCount++
+    }
+
+    Assert ([int]$gate.modCount -eq $modCount) "Release gate modCount mismatch in $Channel."
+    if ($null -ne $gate.PSObject.Properties['indexEntryCount']) { Assert ([int]$gate.indexEntryCount -eq $entries.Count) "Release gate indexEntryCount mismatch in $Channel." }
+    Assert (($providers.github + $providers.modrinth + $providers.curseforge) -eq $modCount) "Some managed mod source is uncounted in $Channel."
+    Assert ([int]$gate.downloadableGitHubModCount -eq $providers.github -and [int]$gate.downloadableModrinthModCount -eq $providers.modrinth -and [int]$gate.downloadableCurseForgeModCount -eq $providers.curseforge) "Provider counts mismatch in $Channel."
+
+    $unindexed = @(Get-ChildItem -LiteralPath $packRoot -Recurse -File | ForEach-Object { Get-RelativeFile $packRoot $_.FullName } | Where-Object { $_ -notin @('pack.toml','index.toml','release.json') -and !$seen.Contains($_) })
+    Assert ($unindexed.Count -eq 0) "Unindexed file(s) in Packwiz channel $Channel`: $($unindexed -join ', ')"
+    return [pscustomobject]@{ Name=$Channel; Version=$packVersion; Mods=$modCount; Entries=$entries.Count; Providers=$providers; Gate=$gate }
 }
-Assert (($providers.github + $providers.modrinth + $providers.curseforge) -eq $modCount) 'Some managed mod source was not counted.'
-Assert ($gate.downloadableGitHubModCount -eq $providers.github -and $gate.downloadableModrinthModCount -eq $providers.modrinth -and $gate.downloadableCurseForgeModCount -eq $providers.curseforge) 'Release gate provider counts do not match actual metafiles.'
-Assert ($actual.Count -eq $expected.Count) "Pages tree has $($actual.Count) files; manifest allows $($expected.Count)."
+
+Assert (Test-Path -LiteralPath $root -PathType Container) 'Pages site root is missing.'
+foreach ($required in $publicWebFiles) { Assert (Test-Path -LiteralPath (Join-Path $root $required) -PathType Leaf) "Required public web file is missing: $required" }
+$allFiles = @(Get-ChildItem -LiteralPath $root -Recurse -File -Force)
+foreach ($file in $allFiles) { Assert (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0) "Symlink/reparse point is forbidden in Pages content: $($file.FullName)" }
+$actual = @($allFiles | ForEach-Object { Get-RelativeFile $root $_.FullName } | Sort-Object -Culture 'en-US')
+$expected = @{}
+foreach ($path in $publicWebFiles) { $expected[$path] = $true }
+foreach ($path in @('updater/manifest.json','updater/manifest.sig')) { $expected[$path] = $true }
+
+foreach ($path in $actual) {
+    Assert ($path -notmatch '(?i)(^|/)(\.env|.*\.key|.*\.p12|.*\.pem)$') "Private/secret-like file is forbidden in Pages: $path"
+    Assert ($path -notmatch '(?i)\.(jar|zip|mca|nbt)$') "Binary/world archive is forbidden in Pages: $path"
+    if ($path -notin $publicWebFiles -and $path -notin @('updater/manifest.json','updater/manifest.sig')) {
+        $prefixChannel = $null
+        foreach ($channel in $channels) { if ($path.StartsWith("pack/$channel/",[StringComparison]::OrdinalIgnoreCase)) { $prefixChannel = $channel; break } }
+        Assert ($null -ne $prefixChannel) "Unexpected public file: $path"
+        Assert-AllowedPackPath $path $prefixChannel
+    }
+}
+
+$channelResults = @{}
+foreach ($channel in $channels) { $channelResults[$channel] = Test-PackChannel $channel $expected }
+
+$manifestPath = Join-Path $root 'updater\manifest.json'
+$signaturePath = Join-Path $root 'updater\manifest.sig'
+$publicKeyPath = Join-Path $PSScriptRoot 'kxcraft-updater-public-key.spki.base64'
+foreach ($path in @($manifestPath,$signaturePath,$publicKeyPath)) { Assert (Test-Path -LiteralPath $path -PathType Leaf) "Updater publication file is missing: $path" }
+$manifestBytes = [IO.File]::ReadAllBytes($manifestPath)
+$manifest = [Text.UTF8Encoding]::new($false,$true).GetString($manifestBytes) | ConvertFrom-Json -ErrorAction Stop
+$signatureBytes = [Convert]::FromBase64String(([IO.File]::ReadAllText($signaturePath)).Trim())
+$keyBytes = [Convert]::FromBase64String(([IO.File]::ReadAllText($publicKeyPath)).Trim())
+$rsa = [Security.Cryptography.RSA]::Create()
+try {
+    $read = 0
+    $rsa.ImportSubjectPublicKeyInfo($keyBytes,[ref]$read)
+    Assert ($read -eq $keyBytes.Length) 'Updater public key contains unexpected trailing bytes.'
+    Assert ($rsa.VerifyData($manifestBytes,$signatureBytes,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) 'Updater manifest RSA signature is invalid.'
+} finally { $rsa.Dispose() }
+Assert ($manifest.schemaVersion -eq 1 -and $manifest.state -ceq 'PUBLISHED') 'Updater manifest is not PUBLISHED.'
+Assert ([string]$manifest.updaterVersion -match '^\d+\.\d+\.\d+$') 'Updater version is malformed.'
+Assert ([int]$manifest.sequence -ge 1) 'Updater sequence is invalid.'
+Assert ([string]$manifest.bundle.url -match '^https://raw\.githubusercontent\.com/Francho2002/kxcraft/[0-9a-f]{40}/distribution-v1/updater/releases/1\.0\.0/KxCraft-Updater\.zip$') 'Updater bundle URL is not pinned to a complete immutable Git commit.'
+Assert ([long]$manifest.bundle.length -gt 0 -and [string]$manifest.bundle.sha256 -match '^[0-9a-f]{64}$') 'Updater bundle integrity metadata is invalid.'
+Assert (@($manifest.files).Count -eq 2) 'Updater manifest must contain exactly two updater files.'
+foreach ($file in $manifest.files) { Assert ([string]$file.path -in @('KxCraft-Updater.ps1','KxCraft-ManagedFiles.ps1') -and [long]$file.length -gt 0 -and [string]$file.sha256 -match '^[0-9a-f]{64}$') 'Updater component pin is malformed.' }
+$managed = $channelResults['managed-3players']
+$signedChannel = $manifest.channels.'managed-3players'
+Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $managed.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$managed.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$managed.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $managed.Mods) 'Updater signature does not pin the exact published managed Packwiz channel.'
+$expected['updater/manifest.json'] = $true
+$expected['updater/manifest.sig'] = $true
+Assert ($actual.Count -eq $expected.Count) "Pages tree has $($actual.Count) files; allowlist expects $($expected.Count)."
 foreach ($path in $actual) { Assert $expected.ContainsKey($path) "Unexpected public file: $path" }
 foreach ($path in $expected.Keys) { Assert ($actual -contains $path) "Expected public file is missing: $path" }
 
 $html = [IO.File]::ReadAllText((Join-Path $root 'index.html'))
-Assert ($html -match 'aria-disabled="true"') 'KxCraft.zip download control must remain disabled.'
-Assert ($html -match 'KxCraft\.zip') 'Download section marker disappeared.'
-Write-Output "PASS: Pages allowlist; Packwiz mods=$modCount/index entries=$($entries.Count); providers GitHub=$($providers.github), Modrinth=$($providers.modrinth), CurseForge=$($providers.curseforge); PUBLISHED gate and SHA-256 checks passed."
+Assert ($html -match 'Actualizar instalación existente de KxCraft') 'Visible one-time migration link is missing.'
+Assert ($html -notmatch 'aria-disabled="true"') 'A download control is still disabled.'
+foreach ($asset in @('KxCraft-Lite.zip','KxCraft-FULL.zip','KxCraft-Migrator-1.0.0.zip')) {
+    Assert ($html.Contains("releases/download/$($managed.Version)/$asset")) "The active web page does not link to the verified $asset release asset."
+}
+Assert ($html -match 'una sola vez|una vez') 'The web page must explain that migration runs once.'
+
+Write-Output ("PASS: Pages allowlist; legacy=$($channelResults['private-3players'].Version)/$($channelResults['private-3players'].Mods); managed=$($managed.Version)/$($managed.Mods); index entries=$($managed.Entries); RSA signature, immutable Updater pin, download links and SHA-256 checks passed.")

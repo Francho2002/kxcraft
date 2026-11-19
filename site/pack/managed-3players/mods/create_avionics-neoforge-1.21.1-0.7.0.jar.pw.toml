@@ -1,0 +1,8 @@
+name = "Create: Avionics"
+filename = "create_avionics-neoforge-1.21.1-0.7.0.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/h4nsLvjf/versions/5ONoEedX/create_avionics-neoforge-1.21.1-0.7.0.jar"
+hash-format = "sha256"
+hash = "ad80e3d5ca6fafb1575f823c0bb904b55872a41f9761f5639d759a6ef317e69e"

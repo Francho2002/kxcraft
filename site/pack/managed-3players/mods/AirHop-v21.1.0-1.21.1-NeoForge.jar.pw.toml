@@ -1,0 +1,8 @@
+name = "Air Hop"
+filename = "AirHop-v21.1.0-1.21.1-NeoForge.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/g1eaCZgs/versions/jKt2foO0/AirHop-v21.1.0-1.21.1-NeoForge.jar"
+hash-format = "sha256"
+hash = "898ca846be7e864902895644c2d0246c6d9f00daaa696c75dc51ef3f5a75b858"

@@ -1,0 +1,8 @@
+name = "KxCraft CBC Camera Null Fix"
+filename = "kxcraft-cbc-camera-null-fix-0.1.1-dev.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/e761ef483640d2df5f44ee1b54b2478cf3437cfb/binaries/mods/kxcraft-cbc-camera-null-fix-0.1.1-dev.jar"
+hash-format = "sha256"
+hash = "586dee4e8d26d8c91bfcdc9bbaf9fea8c0a3d2a0e0831538a99f7f34258a2d40"

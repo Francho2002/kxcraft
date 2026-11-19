@@ -1,0 +1,8 @@
+name = "Create cobblestone"
+filename = "createcobblestone-1.4.9+neoforge-1.21.1-130.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/createcobblestone-1.4.9%2Bneoforge-1.21.1-130.jar"
+hash-format = "sha256"
+hash = "681d05b576e063af9157f240b62239b3d80609e9f66fcb59644dc1f57d70ffb3"

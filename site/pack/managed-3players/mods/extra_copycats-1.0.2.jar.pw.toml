@@ -1,0 +1,8 @@
+name = "Extra Copycats"
+filename = "extra_copycats-1.0.2.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/KEG1fY2H/versions/xDN9lyTb/extra_copycats-1.0.2.jar"
+hash-format = "sha256"
+hash = "afb39b4fe940275015e4809b5c69704346883f72139924da8f347ebf7032ab19"

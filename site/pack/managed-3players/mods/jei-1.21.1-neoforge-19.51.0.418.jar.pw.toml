@@ -1,0 +1,8 @@
+name = "Just Enough Items"
+filename = "jei-1.21.1-neoforge-19.51.0.418.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/u6dRKJwZ/versions/ufHUqt9b/jei-1.21.1-neoforge-19.51.0.418.jar"
+hash-format = "sha256"
+hash = "8bc3936d869e4040a5649c58b7e8be1c78c82a245c0dc07bdd68ab49121a222c"

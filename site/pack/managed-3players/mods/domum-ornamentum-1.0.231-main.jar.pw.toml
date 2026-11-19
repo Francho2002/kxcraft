@@ -1,0 +1,8 @@
+name = "Domum Ornamentum"
+filename = "domum-ornamentum-1.0.231-main.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/domum-ornamentum-1.0.231-main.jar"
+hash-format = "sha256"
+hash = "04c0c902bdbcbd48e38bee5a323907ae0b7b7db4ff4a3e4da7c45334b65610a1"

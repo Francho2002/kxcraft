@@ -1,0 +1,8 @@
+name = "Sable Ragdolls"
+filename = "sable_player_ragdoll-1.21.1-0.8.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/I3mWDgfy/versions/7VQ9pGev/sable_player_ragdoll-1.21.1-0.8.1.jar"
+hash-format = "sha256"
+hash = "52231de8cf20713040e948ec41c0813d8b1eab2e7ec327c1ff5da8bdc3ba33fd"

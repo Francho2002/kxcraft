@@ -225,22 +225,55 @@ h1 span { color: var(--gold); }
 .mods-page .mods-section { padding-top: 31px; }
 .market-page-section { padding: 37px 0 64px; }
 .market-note { margin: -5px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.5; }
-.schematic-tools { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(190px, 260px); gap: 14px; align-items: end; margin-bottom: 22px; }
+.schematic-tools { display: grid; gap: 15px; margin-bottom: 22px; }
 .schematic-search { max-width: none; margin: 0; }
-.schematic-category-control { display: block; }
-.schematic-category-control .filter-label { margin-bottom: 7px; }
-.schematic-category-control select { width: 100%; height: 46px; padding: 0 12px; color: var(--text); background: #191d17; border: 1px solid var(--line); border-radius: 7px; }
-.schematic-category-control select:focus-visible, .schematic-search:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+.schematic-category-control { display: grid; gap: 9px; padding: 13px 14px; background: linear-gradient(120deg, rgba(232, 201, 145, .055), rgba(255, 255, 255, .018)); border: 1px solid var(--line); border-radius: 9px; }
+.schematic-category-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.schematic-category-control .filter-label { color: var(--text); font-size: 12px; font-weight: 700; letter-spacing: .035em; }
+.schematic-category-hint { color: var(--soft); font-size: 11px; }
+.schematic-category-filters { display: flex; flex-wrap: wrap; gap: 7px; }
+.schematic-category-filter { display: inline-flex; min-height: 32px; align-items: center; gap: 8px; padding: 5px 9px; color: var(--muted); background: rgba(10, 12, 10, .42); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-size: 11px; line-height: 1.2; transition: color .16s ease, background .16s ease, border-color .16s ease, transform .16s ease; }
+.schematic-category-filter:hover { color: var(--text); border-color: var(--line-strong); transform: translateY(-1px); }
+.schematic-category-filter:focus-visible, .schematic-search:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+.schematic-category-filter-count { min-width: 19px; padding: 2px 5px; color: var(--soft); background: rgba(255,255,255,.055); border-radius: 999px; font-size: 10px; text-align: center; }
+.schematic-category-filter[aria-pressed="true"] { color: #171811; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+.schematic-category-filter[aria-pressed="true"] .schematic-category-filter-count { color: #27251d; background: rgba(17,19,16,.12); }
+.schematic-category-filter[data-category-key="aeronaves"] { --category-accent: #9dc8e8; }
+.schematic-category-filter[data-category-key="defensa"] { --category-accent: #e6a18c; }
+.schematic-category-filter[data-category-key="infraestructura"] { --category-accent: #c3addf; }
+.schematic-category-filter[data-category-key="energia"] { --category-accent: #efd17e; }
+.schematic-category-filter[data-category-key="granjas"] { --category-accent: #a8d28d; }
+.schematic-category-filter[data-category-key="industria"] { --category-accent: #e8bd86; }
+.schematic-category-filter[data-category-key="nautica"] { --category-accent: #83c7bd; }
+.schematic-category-filter[data-category-key="espacio"] { --category-accent: #b7a7ed; }
+.schematic-category-filter[data-category-key="alquimia"] { --category-accent: #d99fd4; }
+.schematic-category-filter[data-category-key="robotica"] { --category-accent: #e6a677; }
+.schematic-category-filter[data-category-key="trenes"] { --category-accent: #aab9d1; }
+.schematic-category-filter[data-category-key="terrestres"] { --category-accent: #c8bb8d; }
+.schematic-category-filter:not([data-category-key="all"]):not([aria-pressed="true"]) { border-color: color-mix(in srgb, var(--category-accent) 31%, var(--line)); }
+.schematic-category-filter:not([data-category-key="all"]):not([aria-pressed="true"]) .schematic-category-filter-count { color: var(--category-accent); }
 .schematic-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
-.schematic-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; background: linear-gradient(145deg, rgba(35, 42, 31, .9), rgba(22, 25, 21, .94)); border: 1px solid var(--line); border-radius: 10px; }
+.schematic-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; background: linear-gradient(145deg, rgba(35, 42, 31, .9), rgba(22, 25, 21, .94)); border: 1px solid var(--line); border-top: 2px solid var(--category-accent, var(--line-strong)); border-radius: 10px; }
+.schematic-card[data-category-key="aeronaves"] { --category-accent: #9dc8e8; }
+.schematic-card[data-category-key="defensa"] { --category-accent: #e6a18c; }
+.schematic-card[data-category-key="infraestructura"] { --category-accent: #c3addf; }
+.schematic-card[data-category-key="energia"] { --category-accent: #efd17e; }
+.schematic-card[data-category-key="granjas"] { --category-accent: #a8d28d; }
+.schematic-card[data-category-key="industria"] { --category-accent: #e8bd86; }
+.schematic-card[data-category-key="nautica"] { --category-accent: #83c7bd; }
+.schematic-card[data-category-key="espacio"] { --category-accent: #b7a7ed; }
+.schematic-card[data-category-key="alquimia"] { --category-accent: #d99fd4; }
+.schematic-card[data-category-key="robotica"] { --category-accent: #e6a677; }
+.schematic-card[data-category-key="trenes"] { --category-accent: #aab9d1; }
+.schematic-card[data-category-key="terrestres"] { --category-accent: #c8bb8d; }
 .schematic-media { aspect-ratio: 16 / 10; display: grid; place-items: center; overflow: hidden; background: #20251d; border-bottom: 1px solid var(--line); }
 .schematic-image-link { display: block; width: 100%; height: 100%; overflow: hidden; }
 .schematic-image-link:focus-visible { outline: 2px solid var(--gold); outline-offset: -4px; }
 .schematic-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease; }
 .schematic-card:hover .schematic-media img { transform: scale(1.025); }
-.schematic-image-fallback { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; padding: 18px; color: var(--gold); background: radial-gradient(ellipse at center, rgba(232, 201, 145, .1), transparent 72%); font-size: 12px; text-align: center; text-decoration: underline; text-underline-offset: 3px; }
+.schematic-image-fallback { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; padding: 18px; color: var(--category-accent, var(--gold)); background: radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--category-accent, var(--gold)) 13%, transparent), transparent 68%), linear-gradient(145deg, rgba(255,255,255,.025), transparent 55%); font-size: 12px; text-align: center; text-decoration: underline; text-underline-offset: 3px; }
 .schematic-body { flex: 1; padding: 15px 16px 12px; }
-.schematic-category { display: inline-flex; margin-bottom: 9px; padding: 4px 8px; color: var(--gold); background: rgba(232, 201, 145, .08); border: 1px solid rgba(232, 201, 145, .2); border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.schematic-category { display: inline-flex; margin-bottom: 9px; padding: 4px 8px; color: var(--category-accent, var(--gold)); background: color-mix(in srgb, var(--category-accent, var(--gold)) 9%, transparent); border: 1px solid color-mix(in srgb, var(--category-accent, var(--gold)) 27%, transparent); border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .035em; }
 .schematic-title { margin: 0 0 9px; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
 .schematic-description { margin: 0 0 13px; color: var(--muted); font-size: 13px; line-height: 1.45; }
 .schematic-requirements { margin: 10px 0; color: var(--muted); font-size: 12px; }
@@ -251,6 +284,14 @@ h1 span { color: var(--gold); }
 .schematic-fit--ok { color: #b9d69b; background: rgba(138, 181, 95, .08); }
 .schematic-fit--unknown { color: var(--muted); background: rgba(255, 255, 255, .035); }
 .schematic-fit--missing { color: #f0c3a6; background: rgba(180, 92, 58, .1); border: 1px solid rgba(180, 92, 58, .22); }
+.schematic-survival-badges { display: flex; flex-wrap: wrap; gap: 7px; margin: -2px 0 10px; }
+.schematic-survival-warning { display: inline-flex; min-width: 0; align-items: center; gap: 7px; padding: 6px 9px; color: #f0d17b; background: rgba(191, 145, 48, .13); border: 1px solid rgba(225, 181, 79, .38); border-radius: 5px; font-size: 10px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.schematic-survival-warning-icon { flex: 0 0 auto; font-size: 13px; line-height: 1; }
+.schematic-survival-details { margin: 0 0 10px; padding: 7px 9px; color: #d4c99f; background: rgba(191, 145, 48, .07); border: 1px solid rgba(225, 181, 79, .2); border-radius: 5px; font-size: 10px; line-height: 1.45; }
+.schematic-survival-details summary { color: #e8c96f; cursor: pointer; font-weight: 700; }
+.schematic-survival-details summary:focus-visible { outline: 2px solid #e8c96f; outline-offset: 3px; }
+.schematic-survival-details-list { display: grid; gap: 4px; margin: 7px 0 0; padding-left: 17px; }
+.schematic-survival-details-list li { overflow-wrap: anywhere; }
 .schematic-actions { display: flex; flex-direction: column; gap: 11px; padding: 0 16px 16px; }
 .schematic-price { display: flex; min-height: 46px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; color: var(--text); background: rgba(17, 19, 16, .54); border: 1px solid var(--line); border-radius: 6px; font-size: 11px; }
 .schematic-price strong { color: var(--gold); text-align: right; }
@@ -409,7 +450,7 @@ kbd {
 
 @media (max-width: 900px) {
   .mod-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .schematic-tools { grid-template-columns: minmax(0, 1fr) minmax(180px, 230px); }
+  .schematic-tools { gap: 13px; }
   .intro { min-height: 180px; }
   .experience-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .experience-card:last-child { grid-column: 1 / -1; }
@@ -435,6 +476,10 @@ kbd {
   .experience-card img { aspect-ratio: 16 / 9; }
   .mod-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .schematic-tools { grid-template-columns: 1fr; gap: 11px; }
+  .schematic-category-control { padding: 11px; }
+  .schematic-category-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .schematic-category-filters { gap: 6px; }
+  .schematic-category-filter { min-height: 31px; padding: 5px 8px; font-size: 10px; }
   .schematic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .mod-card { min-height: 0; padding: 13px; }
   .card-top { align-items: flex-start; gap: 9px; }
@@ -716,6 +761,66 @@ kbd {
 
 .kx-panel-button:hover {
   background: var(--kx-gold-light);
+}
+
+.kx-pack-downloads {
+  display: grid;
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.kx-pack-downloads .kx-panel-button {
+  min-height: 48px;
+  margin-top: 0;
+}
+
+.kx-panel-button--secondary {
+  border: 1px solid var(--kx-line);
+  color: var(--kx-text);
+  background: rgba(16, 20, 17, .45);
+}
+
+.kx-panel-button--secondary:hover {
+  background: rgba(232, 201, 146, .14);
+}
+
+.kx-pack-status--ready {
+  color: var(--kx-green);
+}
+
+.kx-pack-status--ready .kx-status-dot {
+  background: var(--kx-green);
+}
+
+.kx-migrator-callout {
+  margin-top: 3px;
+  padding: 13px 14px;
+  border: 1px solid rgba(232, 201, 146, .24);
+  background: rgba(16, 20, 17, .35);
+}
+
+.kx-migrator-callout a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--kx-gold);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+  text-decoration: none;
+}
+
+.kx-migrator-callout a:hover {
+  color: var(--kx-gold-light);
+  text-decoration: underline;
+}
+
+.kx-migrator-callout p {
+  margin: 6px 0 0;
+  color: var(--kx-muted);
+  font-size: 10px;
+  line-height: 1.55;
 }
 
 .kx-panel-button--disabled {
