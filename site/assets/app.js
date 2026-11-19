@@ -11,10 +11,8 @@
   const dialogTitle = document.getElementById("dialog-title");
   const dialogDescription = document.getElementById("dialog-description");
   const dialogCategory = document.getElementById("dialog-category");
-  const dialogPlacement = document.getElementById("dialog-placement");
-  const dialogPlacementNote = document.getElementById("dialog-placement-note");
   const dialogMedia = document.getElementById("dialog-media");
-  const distributionSummary = document.getElementById("distribution-summary");
+  const dialogVideo = document.getElementById("dialog-video");
   if (!dataNode || !grid || !filterRoot || !queryInput || !countNode || !emptyNode) return;
 
   let mods;
@@ -41,12 +39,6 @@
   const categories = [...new Set(mods.map((mod) => mod.category))];
   let selectedCategory = "Todos";
 
-  const placementLabels = {
-    "client-profile": "En el perfil cliente",
-    "client-and-server": "En cliente y servidor",
-    "server-only": "Solo en el servidor de KxCraft"
-  };
-
   const makeElement = (tag, className, text) => {
     const element = document.createElement(tag);
     if (className) element.className = className;
@@ -54,16 +46,16 @@
     return element;
   };
 
-  function makeIcon(mod, large = false) {
+  function makeIcon(mod, large = false, useGalleryImage = false) {
     const holder = makeElement("div", "icon-fallback", mod.initials || "KX");
     holder.setAttribute("aria-hidden", "true");
-    const url = mod.icon;
+    const url = mod.icon || (useGalleryImage ? mod.image : "");
     if (!url || !/^https:\/\//i.test(url)) return holder;
 
     const image = document.createElement("img");
     image.className = large ? "mod-icon mod-icon-large" : "mod-icon";
     image.src = url;
-    image.alt = mod.iconAlt || (mod.name + ", imagen");
+    image.alt = mod.icon ? (mod.iconAlt || (mod.name + ", icono")) : (mod.imageAlt || (mod.name + ", imagen"));
     image.loading = "lazy";
     image.decoding = "async";
     image.referrerPolicy = "no-referrer";
@@ -76,25 +68,46 @@
     dialogTitle.textContent = mod.name;
     dialogDescription.textContent = mod.description;
     dialogCategory.textContent = mod.category;
-    if (dialogPlacement) dialogPlacement.textContent = placementLabels[mod.placement] || "";
-    if (dialogPlacementNote) {
-      dialogPlacementNote.textContent = mod.placementNote || "";
-      dialogPlacementNote.hidden = !mod.placementNote;
+    if (mod.image && /^https:\/\//i.test(mod.image)) {
+      const galleryImage = document.createElement("img");
+      galleryImage.className = "mod-detail-image";
+      galleryImage.src = mod.image;
+      galleryImage.alt = mod.imageAlt || (mod.name + ", captura del mod");
+      galleryImage.loading = "lazy";
+      galleryImage.decoding = "async";
+      galleryImage.referrerPolicy = "no-referrer";
+      galleryImage.addEventListener("error", () => galleryImage.replaceWith(makeIcon(mod, true)), { once: true });
+      dialogMedia.replaceChildren(galleryImage);
+    } else {
+      dialogMedia.replaceChildren(makeIcon(mod, true));
     }
-    dialogMedia.replaceChildren(makeIcon(mod, true));
+    if (dialogVideo) {
+      dialogVideo.replaceChildren();
+      dialogVideo.hidden = !mod.video;
+      if (mod.video) {
+        dialogVideo.append(makeElement("h3", "", mod.video.title));
+        const frame = document.createElement("iframe");
+        frame.className = "dialog-video-frame";
+        frame.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(mod.video.id);
+        frame.title = mod.video.title + " — " + mod.name;
+        frame.loading = "lazy";
+        frame.referrerPolicy = "strict-origin-when-cross-origin";
+        frame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+        frame.allowFullscreen = true;
+        dialogVideo.append(frame);
+        dialogVideo.append(makeElement("p", "dialog-video-meta", [mod.video.language, mod.video.note].filter(Boolean).join(" · ")));
+        const sourceLink = makeElement("a", "dialog-video-link", "Abrir video en YouTube ↗");
+        sourceLink.href = mod.video.url;
+        sourceLink.target = "_blank";
+        sourceLink.rel = "noopener noreferrer";
+        dialogVideo.append(sourceLink);
+      }
+    }
     dialog.showModal();
   }
 
-  function drawDistributionSummary() {
-    if (!distributionSummary) return;
-    const clientCount = mods.filter((mod) => ["client-profile", "client-and-server"].includes(mod.placement)).length;
-    const serverCount = mods.filter((mod) => ["server-only", "client-and-server"].includes(mod.placement)).length;
-    const sharedCount = mods.filter((mod) => mod.placement === "client-and-server").length;
-    distributionSummary.replaceChildren(
-      makeElement("span", "distribution-counter", "Cliente · " + clientCount),
-      makeElement("span", "distribution-counter", "Servidor · " + serverCount),
-      makeElement("span", "distribution-counter-note", "Compartidos · " + sharedCount)
-    );
+  if (dialog && dialogVideo) {
+    dialog.addEventListener("close", () => dialogVideo.replaceChildren());
   }
 
   function drawFilters() {
@@ -126,16 +139,13 @@
       card.type = "button";
       card.setAttribute("aria-label", "Ver detalles de " + mod.name);
       const top = makeElement("span", "card-top");
-      top.append(makeIcon(mod));
+      top.append(makeIcon(mod, false, true));
       const text = makeElement("span", "card-title-wrap");
       text.append(makeElement("span", "mod-name", mod.name));
       text.append(makeElement("span", "mod-category", mod.category));
       top.append(text);
       card.append(top);
-      if (mod.placement && mod.placement !== "client-profile") {
-        card.append(makeElement("span", "placement-tag", placementLabels[mod.placement] || "Distribución especial"));
-      }
-      if (mod.featured) card.append(makeElement("span", "featured-tag", "Destacado"));
+      if (mod.video) card.append(makeElement("span", "video-tag", "Con video"));
       card.append(makeElement("span", "mod-description", mod.description));
       card.append(makeElement("span", "card-open", "Ver detalle →"));
       card.addEventListener("click", () => openDetails(mod));
@@ -155,6 +165,5 @@
     }
   });
   drawFilters();
-  drawDistributionSummary();
   drawMods();
 })();
