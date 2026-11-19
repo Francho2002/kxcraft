@@ -1,8 +1,0 @@
-name = "MineColonies"
-filename = "minecolonies-1.1.1403-1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9058/295/minecolonies-1.1.1403-1.21.1.jar"
-hash-format = "sha256"
-hash = "c8d4373ffc8a76638c8edf2bb6716f9209599032209c48d0d559b787f69a0561"

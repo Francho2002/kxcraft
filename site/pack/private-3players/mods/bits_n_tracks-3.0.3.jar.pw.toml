@@ -1,8 +1,0 @@
-name = "Create: Bits 'n' Tracks Community Edition"
-filename = "bits_n_tracks-3.0.3.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/g9koB07q/versions/u76G5vP1/bits_n_tracks-3.0.3.jar"
-hash-format = "sha256"
-hash = "0ea421d135963e66f409d4f81a52c99436ec588b92e43c2222d25c16bd18fb2c"

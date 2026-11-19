@@ -1,8 +1,0 @@
-name = "Permanent Sponges"
-filename = "PermanentSponges-v21.1.0-1.21.1-NeoForge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/p6prwv2Q/versions/9EBHr4tP/PermanentSponges-v21.1.0-1.21.1-NeoForge.jar"
-hash-format = "sha256"
-hash = "1c0f659b8c7f6d432dbf60f4c33886f419a6dc6621d8b8935c7d02ef812c8cac"

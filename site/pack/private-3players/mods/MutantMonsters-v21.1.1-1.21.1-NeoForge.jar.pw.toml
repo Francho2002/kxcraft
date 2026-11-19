@@ -1,8 +1,0 @@
-name = "Mutant Monsters"
-filename = "MutantMonsters-v21.1.1-1.21.1-NeoForge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/derP0ten/versions/dauEcrnZ/MutantMonsters-v21.1.1-1.21.1-NeoForge.jar"
-hash-format = "sha256"
-hash = "1e20340a6642dcd6e43399292825f8cd84a079e0b917e36cf7341e787b626a4f"

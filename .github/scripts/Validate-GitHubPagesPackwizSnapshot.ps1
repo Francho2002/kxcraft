@@ -1,5 +1,5 @@
-# KxCraft Pages release gate. Validates the immutable 1.0.8 channel and the
-# signed managed channel without publishing private files or binary payloads.
+# KxCraft Pages release gate. Validates the single signed Packwiz channel and
+# rejects retired package choices or migration instructions from the public site.
 [CmdletBinding()]
 param(
     [string]$SiteRoot = 'site',
@@ -10,7 +10,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $root = [IO.Path]::GetFullPath($SiteRoot)
-$channels = @('private-3players', 'managed-3players')
+$channels = @('managed-3players')
 $publicWebFiles = @(
     'index.html',
     'mods.html',
@@ -226,11 +226,9 @@ foreach ($path in $actual) { Assert $expected.ContainsKey($path) "Unexpected pub
 foreach ($path in $expected.Keys) { Assert ($actual -contains $path) "Expected public file is missing: $path" }
 
 $html = [IO.File]::ReadAllText((Join-Path $root 'index.html'))
-Assert ($html -match 'Actualizar instalación existente de KxCraft') 'Visible one-time migration link is missing.'
-Assert ($html -notmatch 'aria-disabled="true"') 'A download control is still disabled.'
-foreach ($asset in @('KxCraft-Lite.zip','KxCraft-FULL.zip','KxCraft-Migrator-1.0.0.zip')) {
-    Assert ($html.Contains("releases/download/$($managed.Version)/$asset")) "The active web page does not link to the verified $asset release asset."
-}
-Assert ($html -match 'una sola vez|una vez') 'The web page must explain that migration runs once.'
+Assert ($html.Contains('href="https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip"')) 'The public site must link to the single KxCraft.zip release asset.'
+Assert (([regex]::Matches($html,'(?i)Descargar KxCraft')).Count -eq 1) 'The page must contain exactly one KxCraft download control.'
+Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
+Assert ($html -match 'Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
 
-Write-Output ("PASS: Pages allowlist; legacy=$($channelResults['private-3players'].Version)/$($channelResults['private-3players'].Mods); managed=$($managed.Version)/$($managed.Mods); index entries=$($managed.Entries); RSA signature, immutable Updater pin, download links and SHA-256 checks passed.")
+Write-Output ("PASS: Pages allowlist; single channel=$($managed.Version)/$($managed.Mods); index entries=$($managed.Entries); RSA signature, immutable Updater pin, single KxCraft.zip link, retired-option exclusion and SHA-256 checks passed.")

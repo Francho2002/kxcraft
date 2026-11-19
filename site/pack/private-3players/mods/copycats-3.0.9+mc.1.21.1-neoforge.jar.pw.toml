@@ -1,8 +1,0 @@
-name = "Create: Copycats+"
-filename = "copycats-3.0.9+mc.1.21.1-neoforge.jar"
-side = "client"
-
-[download]
-url = "https://raw.githubusercontent.com/Francho2002/kxcraft/d878793f83283257c038e54d7b0a1bac0bf2e37d/binaries/mods/copycats-3.0.9%2Bmc.1.21.1-neoforge.jar"
-hash-format = "sha256"
-hash = "8649a23c36deca5c67cf916de58f756413581de3664c4ea99fecdee4359763b6"

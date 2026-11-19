@@ -1,8 +1,0 @@
-name = "Forgematica"
-filename = "forgematica-0.4.2+mc1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/dCKRaeBC/versions/71jxaAwz/forgematica-0.4.2%2Bmc1.21.1.jar"
-hash-format = "sha256"
-hash = "e19f1653c2f72c771bca2c21519620b71cb32511e25698ba70d5654d50e96c2d"

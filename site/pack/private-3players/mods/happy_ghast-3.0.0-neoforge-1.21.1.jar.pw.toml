@@ -1,8 +1,0 @@
-name = "dried_ghast"
-filename = "happy_ghast-3.0.0-neoforge-1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/H25juIDM/versions/snuUaxrW/happy_ghast-3.0.0-neoforge-1.21.1.jar"
-hash-format = "sha256"
-hash = "19203d3fb3bcf7cfb1e40f607388af4b3a3d24d1f03a5a773c48e6de34e9ad23"

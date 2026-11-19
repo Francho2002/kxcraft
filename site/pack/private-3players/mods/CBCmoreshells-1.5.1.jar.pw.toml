@@ -1,8 +1,0 @@
-name = "CBC Enhanced Shells"
-filename = "CBCmoreshells-1.5.1.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9336/668/CBCmoreshells-1.5.1.jar"
-hash-format = "sha256"
-hash = "31da3b14a4436ea2fd218c626fa1faa29b05ce6e9ee0793029c95037a967851f"

@@ -1,8 +1,0 @@
-name = "CBC: Warium Projectiles"
-filename = "cbcwariumce-1.2.0.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9276/483/cbcwariumce-1.2.0.jar"
-hash-format = "sha256"
-hash = "a1a6d1f972f61e2cd5bd1a78aa19a858964f9a26e97a238962552073921de85b"

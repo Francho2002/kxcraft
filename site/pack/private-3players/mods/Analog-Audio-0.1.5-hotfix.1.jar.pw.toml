@@ -1,8 +1,0 @@
-name = "Analog Audio"
-filename = "Analog-Audio-0.1.5-hotfix.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/iMAVG2nH/versions/BshMjyFt/Analog-Audio-0.1.5-hotfix.1.jar"
-hash-format = "sha256"
-hash = "effc623ad0b3e332bb29252f5c41f767cb194a47ce5ae195d186f442124807a3"

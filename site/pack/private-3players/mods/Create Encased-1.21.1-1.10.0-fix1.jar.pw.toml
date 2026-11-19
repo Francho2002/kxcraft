@@ -1,8 +1,0 @@
-name = "Create Encased"
-filename = "Create Encased-1.21.1-1.10.0-fix1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/hSSqdyU1/versions/pld6Eng9/Create%20Encased-1.21.1-1.10.0-fix1.jar"
-hash-format = "sha256"
-hash = "67de80fa384334e75ec087960a3d5bae40226bdea274d5c97995c81431431ed7"

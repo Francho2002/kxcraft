@@ -1,8 +1,0 @@
-name = "Create: Simulated Additions"
-filename = "create_simulated_additions-0.2.3-neoforge-1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/8221/986/create_simulated_additions-0.2.3-neoforge-1.21.1.jar"
-hash-format = "sha256"
-hash = "a0179bf55a2b2f33956663a85a37461bf861add7144a69e066d2b005bb1ca956"

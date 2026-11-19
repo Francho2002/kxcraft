@@ -1,8 +1,0 @@
-name = "ImmediatelyFast"
-filename = "ImmediatelyFast-NeoForge-1.6.15+1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/ImmediatelyFast-NeoForge-1.6.15%2B1.21.1.jar"
-hash-format = "sha256"
-hash = "7d7b1d7b9f71d5303e42b2fa45f222a5ab06e0ef5982abb6da5dd9cc449b3702"

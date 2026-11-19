@@ -1,8 +1,0 @@
-name = "Create: Flight Control"
-filename = "create_flight_control-neoforge-0.8.3.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/IGVrnkhH/versions/FSr0O2k8/create_flight_control-neoforge-0.8.3.jar"
-hash-format = "sha256"
-hash = "86691e6965bb9c3e54ef71001a4ebea798e1ccc9b30ccdb731538933f1379208"

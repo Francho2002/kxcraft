@@ -1,8 +1,0 @@
-name = "Tiny Skeletons"
-filename = "TinySkeletons-v21.1.0-1.21.1-NeoForge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/A2xcMSUn/versions/QO99Qp79/TinySkeletons-v21.1.0-1.21.1-NeoForge.jar"
-hash-format = "sha256"
-hash = "cf3b5094c2619bd7e7951a3d4a2c553b9ead3932ebdb4ac577f9599461261da9"

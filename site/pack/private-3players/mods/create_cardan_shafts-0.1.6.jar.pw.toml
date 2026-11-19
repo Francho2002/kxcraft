@@ -1,8 +1,0 @@
-name = "Create Cardan Shafts"
-filename = "create_cardan_shafts-0.1.6.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/5zf6e26A/versions/gN7NRzux/create_cardan_shafts-0.1.6.jar"
-hash-format = "sha256"
-hash = "fd3ef915ec1308b392915708812b91625ce058394a54a2251d59b68b9717daf1"
