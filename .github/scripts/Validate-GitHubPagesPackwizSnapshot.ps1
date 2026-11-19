@@ -1,4 +1,4 @@
-﻿# Source baseline: Francho2002/kxcraft/.github/scripts/Validate-GitHubPagesPackwizSnapshot.ps1
+# Source baseline: Francho2002/kxcraft/.github/scripts/Validate-GitHubPagesPackwizSnapshot.ps1
 # Adapted for dynamic Packwiz releases; keep security gates tied to actual content.
 [CmdletBinding()]
 param(
@@ -53,7 +53,18 @@ function Assert-AllowedPackPath([string]$Relative) {
 }
 
 Assert (Test-Path -LiteralPath $packRoot -PathType Container) 'Packwiz snapshot directory is missing.'
-foreach ($required in @('index.html', 'assets/app.js', 'assets/site.css')) {
+$publicWebFiles = @(
+    'index.html',
+    'mods.html',
+    'tienda.html',
+    'assets/app.js',
+    'assets/site.css',
+    'assets/schematics.js',
+    'assets/kxcraft-airship-fortress.jpg',
+    'assets/kxcraft-hero-airship.jpg',
+    'assets/kxcraft-island-workshop.jpg'
+)
+foreach ($required in $publicWebFiles) {
     Assert (Test-Path -LiteralPath (Join-Path $root $required) -PathType Leaf) "Required public web file is missing: $required"
 }
 
@@ -66,7 +77,7 @@ foreach ($path in $actual) {
     Assert ($path -notmatch '(?i)(^|/)(\.env|.*\.key|.*\.p12|.*\.pem)$') "Private/secret-like file is forbidden: $path"
     Assert ($path -notmatch '(?i)\.(jar|zip|mca|nbt)$') "Binary/world archive is forbidden in Pages: $path"
     if ($path -ceq 'pack/private-3players/servers.dat') { continue }
-    if ($path -notin @('index.html', 'assets/app.js', 'assets/site.css')) { Assert-AllowedPackPath $path }
+    if ($path -notin $publicWebFiles) { Assert-AllowedPackPath $path }
 }
 
 $packPath = Join-Path $packRoot 'pack.toml'
@@ -102,8 +113,14 @@ $entries = Get-TomlBlocks $indexText
 Assert ($entries.Count -gt 0) 'index.toml has no entries.'
 $expected = @{
     'index.html' = $true
+    'mods.html' = $true
+    'tienda.html' = $true
     'assets/app.js' = $true
     'assets/site.css' = $true
+    'assets/schematics.js' = $true
+    'assets/kxcraft-airship-fortress.jpg' = $true
+    'assets/kxcraft-hero-airship.jpg' = $true
+    'assets/kxcraft-island-workshop.jpg' = $true
     'pack/private-3players/pack.toml' = $true
     'pack/private-3players/index.toml' = $true
     'pack/private-3players/release.json' = $true
