@@ -1,16 +1,16 @@
 {
     "schemaVersion":  1,
     "state":  "PUBLISHED",
-    "releaseVersion":  "1.0.8",
+    "releaseVersion":  "1.0.7",
     "packTomlUrl":  "https://francho2002.github.io/kxcraft/pack/private-3players/pack.toml",
-    "packTomlSha256":  "989b3ad68051158ba0fe3183cc5dd76cba97ee1e1080af2cbf4fd50e9d441132",
-    "modCount":  183,
-    "indexEntryCount":  183,
+    "packTomlSha256":  "4f92c945c8e2c8d0151af0519035f6195930f1ce1d79e6fe4c43f9ed87455f6a",
+    "modCount":  178,
+    "indexEntryCount":  178,
     "downloadableGitHubModCount":  22,
-    "downloadableModrinthModCount":  140,
-    "downloadableCurseForgeModCount":  21,
+    "downloadableModrinthModCount":  139,
+    "downloadableCurseForgeModCount":  17,
     "zipSeededPreservedModCount":  0,
     "rawBinaryCommit":  "e761ef483640d2df5f44ee1b54b2478cf3437cfb",
     "exactSourceBlockerCount":  0,
-    "sourceMapSha256":  "528d07639e0db3a511ff198ec7fd32c5472c7f94fbcfc359e6c9fac36d33d2b2"
+    "sourceMapSha256":  "3269240a56ed77b5c4f9fe6d2d4f84babea8e7f1fb1e1bab8836cb5976db111f"
 }
