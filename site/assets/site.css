@@ -778,6 +778,15 @@ kbd {
   color: var(--kx-green);
 }
 
+.kx-panel-top .kx-pack-status {
+  padding-top: 0;
+  border-top: 0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .kx-pack-status--ready .kx-status-dot {
   background: var(--kx-green);
 }
