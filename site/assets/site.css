@@ -762,6 +762,21 @@ kbd {
 .kx-panel-button:hover {
   background: var(--kx-gold-light);
 }
+.kx-launcher-alternatives {
+  margin: 12px 0 0;
+  color: var(--kx-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.kx-launcher-alternatives a {
+  color: var(--kx-gold);
+  text-decoration: none;
+}
+
+.kx-launcher-alternatives a:hover {
+  text-decoration: underline;
+}
 
 .kx-pack-downloads {
   display: grid;
