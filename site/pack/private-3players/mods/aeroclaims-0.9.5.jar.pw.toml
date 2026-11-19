@@ -1,8 +1,0 @@
-name = "Aeronautics Claims"
-filename = "aeroclaims-0.9.5.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/CwZ8q37q/versions/GBQG9g6R/aeroclaims-0.9.5.jar"
-hash-format = "sha256"
-hash = "79269040ac9ea1b286aa5be5d5d47a662cfcec6fba5af2d1a7d39475bd55172e"
