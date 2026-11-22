@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
   "state": "PUBLISHED",
-  "sequence": 1,
+  "sequence": 2,
   "minimumBootstrapVersion": "1.0.0",
-  "updaterVersion": "1.0.0",
+  "updaterVersion": "1.0.1",
   "bundle": {
-    "url": "https://raw.githubusercontent.com/Francho2002/kxcraft/5114ae4efd58807a5b23c1045e09c5959996ea93/distribution-v1/updater/releases/1.0.0/KxCraft-Updater.zip",
+    "url": "https://raw.githubusercontent.com/Francho2002/kxcraft/406fda24f8177ad65c8e50f32c9877b0b2b54c56/distribution-v1/updater/releases/1.0.1/KxCraft-Updater.zip",
     "immutableCommitStatus": "verified",
-    "length": 9551,
-    "sha256": "7f5028ffa0dbbbb05bef44b7321c23ce38aae623ae9ea37a614ab6f55bbee2d2"
+    "length": 9550,
+    "sha256": "c16bf7a0300daccbc1aa46e6f0ad5d3aa27bb125dc5d58bcfc42fac146d94659"
   },
   "files": [
     {
       "path": "KxCraft-Updater.ps1",
-      "length": 26521,
-      "sha256": "d1b7cd439bbd8e62fe95002259ddc4dff40e6d8fd50215e3b8ed8de2797c5da1"
+      "length": 26543,
+      "sha256": "7d59b81fd01133addc909142f2a7922257974eb9bc10580da2d0364c96f62d19"
     },
     {
       "path": "KxCraft-ManagedFiles.ps1",
@@ -24,10 +24,10 @@
   ],
   "channels": {
     "managed-3players": {
-      "packVersion": "1.0.9",
+      "packVersion": "1.0.10",
       "packTomlUrl": "https://francho2002.github.io/kxcraft/pack/managed-3players/pack.toml",
-      "packTomlSha256": "8cc4ef6d76b7259c18cab8831c83385efddc5788a185eaa95025da85688a910f",
-      "modCount": 195
+      "packTomlSha256": "da2e721c8936db1aea41bafd5ac7c8d9f959e79a7fdfef82c41ce944678b5bf7",
+      "modCount": 198
     }
   }
 }

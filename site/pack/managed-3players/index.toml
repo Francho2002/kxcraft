@@ -441,6 +441,11 @@ hash = "65c0612606dadfb52f75fdc5b89323874763c3405b7fbbaaa118f8e084162fd4"
 metafile = true
 
 [[files]]
+file = "mods/ctl-neoforge-1.2.0.jar.pw.toml"
+hash = "d6f1a370122d390fd48695671249521487e2dfcc1d3345f8a6017c16c9f3fc95"
+metafile = true
+
+[[files]]
 file = "mods/curios-neoforge-9.5.1+1.21.1.jar.pw.toml"
 hash = "1abb1699e02ecf45420e1144795ac4da2ba0154d80e99187241a1f1947228d6d"
 metafile = true
@@ -816,6 +821,11 @@ hash = "00dd44c9511bcbdfa9be77720ca2a6850b9b4daeb868484be221cba465693dd5"
 metafile = true
 
 [[files]]
+file = "mods/Sable_Cleanup_0.4.0.jar.pw.toml"
+hash = "9bf7d436642d326baff9b1373b39d1f4360e0b280ace5335829a2eb62d3ccaa6"
+metafile = true
+
+[[files]]
 file = "mods/sable_player_ragdoll-1.21.1-0.8.1.jar.pw.toml"
 hash = "464a4689259cf0bd00ea22305aef111e89ed5845db2ea77c757de606ac329537"
 metafile = true
@@ -828,6 +838,11 @@ metafile = true
 [[files]]
 file = "mods/sablefloaters-0.0.6.jar.pw.toml"
 hash = "1aa6cb4ebc1a0ff7e40acfca1519bba1af1956140e396a24d6dfcc3274c08001"
+metafile = true
+
+[[files]]
+file = "mods/shipmanager-1.1.jar.pw.toml"
+hash = "2873536bd52aa48d8c5eacfca35293a63383ed37f873f762d7584548c6a2d0df"
 metafile = true
 
 [[files]]
