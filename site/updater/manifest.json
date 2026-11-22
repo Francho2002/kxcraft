@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "state": "PUBLISHED",
-  "sequence": 2,
+  "sequence": 3,
   "minimumBootstrapVersion": "1.0.0",
   "updaterVersion": "1.0.1",
   "bundle": {
@@ -24,10 +24,10 @@
   ],
   "channels": {
     "managed-3players": {
-      "packVersion": "1.0.10",
+      "packVersion": "1.0.11",
       "packTomlUrl": "https://francho2002.github.io/kxcraft/pack/managed-3players/pack.toml",
-      "packTomlSha256": "da2e721c8936db1aea41bafd5ac7c8d9f959e79a7fdfef82c41ce944678b5bf7",
-      "modCount": 198
+      "packTomlSha256": "f03a478f0cb1f978c620194347a726b3683fc33d0af232e2952270d3e90a8463",
+      "modCount": 199
     }
   }
 }
