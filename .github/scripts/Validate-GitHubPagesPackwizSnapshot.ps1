@@ -20,7 +20,13 @@ $publicWebFiles = @(
     'assets/schematics.js',
     'assets/kxcraft-airship-fortress.jpg',
     'assets/kxcraft-hero-airship.jpg',
-    'assets/kxcraft-island-workshop.jpg'
+    'assets/kxcraft-island-workshop.jpg',
+    'assets/kxcraft-jumbo-green-airplane.png',
+    'assets/kxcraft-landkreuzer-ratte.png',
+    'assets/kxcraft-colonias.jpg',
+    'assets/kxcraft-create-guerra.jpg',
+    'assets/kxcraft-exploracion.jpg',
+    'assets/kxcraft-mark.png'
 )
 
 function Assert([bool]$Condition, [string]$Message) {
@@ -218,7 +224,12 @@ Assert (@($manifest.files).Count -eq 2) 'Updater manifest must contain exactly t
 foreach ($file in $manifest.files) { Assert ([string]$file.path -in @('KxCraft-Updater.ps1','KxCraft-ManagedFiles.ps1') -and [long]$file.length -gt 0 -and [string]$file.sha256 -match '^[0-9a-f]{64}$') 'Updater component pin is malformed.' }
 $managed = $channelResults['managed-3players']
 $signedChannel = $manifest.channels.'managed-3players'
-Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $managed.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$managed.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$managed.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $managed.Mods) 'Updater signature does not pin the exact published managed Packwiz channel.'
+if ($AllowCandidate -and [string]$managed.Gate.state -ceq 'CANDIDATE') {
+    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -match '^\d+\.\d+\.\d+$' -and [string]$signedChannel.packTomlUrl -ceq [string]$managed.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -match '^[0-9a-f]{64}$' -and [int]$signedChannel.modCount -gt 0) 'The signed updater manifest does not pin a valid prior published channel for this candidate.'
+    Assert ([version][string]$signedChannel.packVersion -lt [version][string]$managed.Version) 'A candidate must advance beyond the still-published signed Packwiz version.'
+} else {
+    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $managed.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$managed.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$managed.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $managed.Mods) 'Updater signature does not pin the exact published managed Packwiz channel.'
+}
 $expected['updater/manifest.json'] = $true
 $expected['updater/manifest.sig'] = $true
 Assert ($actual.Count -eq $expected.Count) "Pages tree has $($actual.Count) files; allowlist expects $($expected.Count)."
