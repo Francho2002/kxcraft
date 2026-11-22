@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
   "state": "PUBLISHED",
-  "releaseVersion": "1.0.10",
+  "releaseVersion": "1.0.11",
   "packTomlUrl": "https://francho2002.github.io/kxcraft/pack/managed-3players/pack.toml",
-  "packTomlSha256": "da2e721c8936db1aea41bafd5ac7c8d9f959e79a7fdfef82c41ce944678b5bf7",
-  "modCount": 198,
-  "indexEntryCount": 198,
+  "packTomlSha256": "f03a478f0cb1f978c620194347a726b3683fc33d0af232e2952270d3e90a8463",
+  "modCount": 199,
+  "indexEntryCount": 199,
   "downloadableGitHubModCount": 22,
   "downloadableModrinthModCount": 149,
-  "downloadableCurseForgeModCount": 27,
+  "downloadableCurseForgeModCount": 28,
   "zipSeededPreservedModCount": 0,
   "rawBinaryCommit": "e761ef483640d2df5f44ee1b54b2478cf3437cfb",
   "exactSourceBlockerCount": 0,
-  "sourceMapSha256": "7fa0f6f8430aaf36232ab23433483900fbcfb5587cb229bbdcc98716a600acef"
+  "sourceMapSha256": "90bbae944685a3f2a54045b3bdb5d30c4c073ed67fc170a91e19dd48b74d99f1"
 }

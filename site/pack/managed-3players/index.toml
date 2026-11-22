@@ -171,6 +171,11 @@ hash = "8342d5b556ea10395ab3c79207bab697c58755cda49b2529a23a27fff768d6af"
 metafile = true
 
 [[files]]
+file = "mods/cr_aero_structures.jar.pw.toml"
+hash = "f3f4f43dc8b888cb5a95da9276ba15ad91c0bcc86f32f6d588d30fbc5a3b2fcb"
+metafile = true
+
+[[files]]
 file = "mods/Create Aeronautics Gyroscope Stabilizers.jar.pw.toml"
 hash = "bcf57e8a9ee66c71762d0bb953df93836af5ee974c4fb5b59aaa6be710211ddb"
 metafile = true
