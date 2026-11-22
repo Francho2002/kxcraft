@@ -1,0 +1,8 @@
+name = "Create Compact Flap"
+filename = "compactflap-neoforge-1.21.1-1.0.4.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/Rsk2MfzV/versions/OLen1ZcN/compactflap-neoforge-1.21.1-1.0.4.1.jar"
+hash-format = "sha256"
+hash = "69e9be30cfb28b7a24b0c31c0e2ae270989405cc646eef94351bbc0968e81a32"

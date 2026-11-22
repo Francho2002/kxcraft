@@ -1,0 +1,8 @@
+name = "Azimuth"
+filename = "azimuth-1.4.10.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/RpH8tmT1/versions/dxtZVosY/azimuth-1.4.10.jar"
+hash-format = "sha256"
+hash = "e9f56d10a6ae56c8d02d2e9e1668c7b70d545d8e20cf4972f0710e9b01989d8a"

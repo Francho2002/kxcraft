@@ -536,6 +536,29 @@ function Update-KxRelease($PackRoot, $Baseline, $Records, $Sources, [string]$Ver
     return [pscustomobject]@{ release = [pscustomobject]$release; sourceMap = $sourceMap }
 }
 
+function Sync-KxPackCompatibilityChannels([string]$SiteRoot) {
+    # Keep player-facing and legacy URLs stable forever. Older Prism profiles pin
+    # private-3players; new direct Packwiz profiles use KxCraft. Both mirror the
+    # currently published managed snapshot so directory naming can never strand a client.
+    $managedRoot = Join-Path $SiteRoot 'pack\managed-3players'
+    foreach ($channel in @('KxCraft', 'private-3players')) {
+        $aliasRoot = Join-Path $SiteRoot ("pack\{0}" -f $channel)
+        if (Test-Path -LiteralPath $aliasRoot) { Remove-Item -LiteralPath $aliasRoot -Recurse -Force }
+        Copy-Item -LiteralPath $managedRoot -Destination $aliasRoot -Recurse
+
+        $packPath = Join-Path $aliasRoot 'pack.toml'
+        $packText = [IO.File]::ReadAllText($packPath)
+        $packText = [regex]::new('(?m)^name\s*=\s*"[^"]*"\s*$').Replace($packText, 'name = "KxCraft"', 1)
+        [IO.File]::WriteAllText($packPath, $packText, (New-Object Text.UTF8Encoding($false)))
+
+        $releasePath = Join-Path $aliasRoot 'release.json'
+        $release = Read-KxJson $releasePath
+        $release.packTomlUrl = "https://francho2002.github.io/kxcraft/pack/$channel/pack.toml"
+        $release.packTomlSha256 = Get-KxSha256 $packPath
+        Write-KxJsonAtomic $releasePath $release
+    }
+}
+
 function Assert-KxSnapshot($Snapshot) {
     $packRoot = [string]$Snapshot.packRoot
     $pack = [IO.File]::ReadAllText((Join-Path $packRoot 'pack.toml'))
@@ -652,6 +675,7 @@ function New-KxPackCandidate($Baseline, $Profile, $Prepared, [string]$CandidateR
     $sourceMapPath = Join-Path $CandidateRoot 'source-map.json'
     $rawCommit = [string]$Baseline.release.rawBinaryCommit
     $release = Update-KxRelease $packRoot $Baseline $Profile.records $Prepared.sources $Version 'CANDIDATE' $sourceMapPath $rawCommit
+    Sync-KxPackCompatibilityChannels $siteRoot
     return [pscustomobject]@{ root = $CandidateRoot; siteRoot = $siteRoot; packRoot = $packRoot; sourceMapPath = $sourceMapPath; version = $Version; changes = $Prepared.changes; profile = $Profile; sources = $Prepared.sources; binaryStage = $Prepared.binaryStage; release = $release.release }
 }
 
@@ -779,27 +803,38 @@ function Get-KxRemoteTree([string]$Head) {
 function Get-KxPackFileMap([string]$PackRoot, [switch]$IncludeDeletes) {
     $prefix = [string]$script:KxConfig.github.repositoryPackPrefix
     $desired = New-Object System.Collections.Generic.List[object]
-    foreach ($file in (Get-ChildItem -LiteralPath $PackRoot -Recurse -File -Force)) {
-        $baseFull = [IO.Path]::GetFullPath($PackRoot).TrimEnd('\') + '\'
-        $full = [IO.Path]::GetFullPath($file.FullName)
-        if (!$full.StartsWith($baseFull, [StringComparison]::OrdinalIgnoreCase)) { throw "Archivo fuera del pack root: $($file.FullName)" }
-        $relative = $full.Substring($baseFull.Length).Replace('\', '/')
-        if ($relative -match '(^|/)\.\.?(/|$)' -or $relative -match '(?i)(^|/)(.env|.*.key|.*.p12|.*.pem)$' -or $relative -match '(?i)\.(jar|zip|mca|nbt)$') { throw "Archivo no permitido en Packwiz candidato: $relative" }
-        $desired.Add([pscustomobject]@{ localPath = $file.FullName; repositoryPath = ($prefix + '/' + $relative); binary = $false })
+    $siteRoot = Split-Path -Parent (Split-Path -Parent $PackRoot)
+    $sourceRoots = New-Object System.Collections.Generic.List[object]
+    $sourceRoots.Add([pscustomobject]@{ path=$PackRoot; prefix=$prefix })
+    foreach ($channel in @('KxCraft', 'private-3players')) {
+        $sourceRoots.Add([pscustomobject]@{ path=(Join-Path $siteRoot ("pack\{0}" -f $channel)); prefix=("site/pack/{0}" -f $channel) })
+    }
+    foreach ($source in $sourceRoots) {
+        if (!(Test-Path -LiteralPath $source.path -PathType Container)) { throw "Falta el alias permanente de Packwiz: $($source.path)" }
+        foreach ($file in (Get-ChildItem -LiteralPath $source.path -Recurse -File -Force)) {
+            $baseFull = [IO.Path]::GetFullPath($source.path).TrimEnd('\') + '\'
+            $full = [IO.Path]::GetFullPath($file.FullName)
+            if (!$full.StartsWith($baseFull, [StringComparison]::OrdinalIgnoreCase)) { throw "Archivo fuera del pack root: $($file.FullName)" }
+            $relative = $full.Substring($baseFull.Length).Replace('\', '/')
+            if ($relative -match '(^|/)\.\.?(/|$)' -or $relative -match '(?i)(^|/)(.env|.*.key|.*.p12|.*.pem)$' -or $relative -match '(?i)\.(jar|zip|mca|nbt)$') { throw "Archivo no permitido en Packwiz candidato: $relative" }
+            $desired.Add([pscustomobject]@{ localPath = $file.FullName; repositoryPath = ($source.prefix + '/' + $relative); binary = $false })
+        }
     }
     if (!$IncludeDeletes) { return @($desired.ToArray()) }
     $head = Get-KxRemoteHead
     $tree = Get-KxRemoteTree $head
     $desiredSet = @{}; foreach ($item in $desired) { $desiredSet[$item.repositoryPath] = $true }
+    $prefixes = @($prefix, 'site/pack/KxCraft', 'site/pack/private-3players')
     $deletes = New-Object System.Collections.Generic.List[object]
     foreach ($item in $tree.tree) {
-        if ($item.type -ceq 'blob' -and $item.path.StartsWith($prefix + '/', [StringComparison]::OrdinalIgnoreCase) -and !$desiredSet.ContainsKey([string]$item.path)) {
+        $underPackPrefix = $false
+        foreach ($candidatePrefix in $prefixes) { if ($item.path.StartsWith($candidatePrefix + '/', [StringComparison]::OrdinalIgnoreCase)) { $underPackPrefix = $true; break } }
+        if ($item.type -ceq 'blob' -and $underPackPrefix -and !$desiredSet.ContainsKey([string]$item.path)) {
             $deletes.Add([pscustomobject]@{ path = [string]$item.path; mode = '100644'; type = 'blob'; sha = $null })
         }
     }
     return [pscustomobject]@{ files = @($desired.ToArray()); deletes = @($deletes.ToArray()) }
 }
-
 function Publish-KxPackSnapshot([string]$PackRoot, [string]$Message, [object[]]$AdditionalFileMap = @()) {
     $repo = '{0}/{1}' -f $script:KxConfig.github.owner, $script:KxConfig.github.repository
     $head = Get-KxRemoteHead
@@ -809,10 +844,15 @@ function Publish-KxPackSnapshot([string]$PackRoot, [string]$Message, [object[]]$
     $fileMap = Get-KxPackFileMap $PackRoot
     $desired = @{}; foreach ($file in $fileMap) { $desired[$file.repositoryPath] = $true }
     $treeItems = New-Object System.Collections.Generic.List[object]
+    $blobCache = @{}
     foreach ($item in $fileMap) {
-        $bytes = [IO.File]::ReadAllBytes($item.localPath)
-        $blob = Invoke-KxGhApi 'POST' ("repos/{0}/git/blobs" -f $repo) ([pscustomobject]@{ content = [Convert]::ToBase64String($bytes); encoding = 'base64' })
-        $treeItems.Add([pscustomobject]@{ path = $item.repositoryPath; mode = '100644'; type = 'blob'; sha = [string]$blob.sha })
+        $contentHash = Get-KxSha256 $item.localPath
+        if (!$blobCache.ContainsKey($contentHash)) {
+            $bytes = [IO.File]::ReadAllBytes($item.localPath)
+            $blob = Invoke-KxGhApi 'POST' ("repos/{0}/git/blobs" -f $repo) ([pscustomobject]@{ content = [Convert]::ToBase64String($bytes); encoding = 'base64' })
+            $blobCache[$contentHash] = [string]$blob.sha
+        }
+        $treeItems.Add([pscustomobject]@{ path = $item.repositoryPath; mode = '100644'; type = 'blob'; sha = [string]$blobCache[$contentHash] })
     }
     foreach ($item in $AdditionalFileMap) {
         $relative = [string]$item.repositoryPath
@@ -824,9 +864,11 @@ function Publish-KxPackSnapshot([string]$PackRoot, [string]$Message, [object[]]$
         $blob = Invoke-KxGhApi 'POST' ("repos/{0}/git/blobs" -f $repo) ([pscustomobject]@{ content = [Convert]::ToBase64String($bytes); encoding = 'base64' })
         $treeItems.Add([pscustomobject]@{ path = $relative; mode = '100644'; type = 'blob'; sha = [string]$blob.sha })
     }
-    $prefix = [string]$script:KxConfig.github.repositoryPackPrefix
+    $prefixes = @([string]$script:KxConfig.github.repositoryPackPrefix, 'site/pack/KxCraft', 'site/pack/private-3players')
     foreach ($item in $tree.tree) {
-        if ($item.type -ceq 'blob' -and $item.path.StartsWith($prefix + '/', [StringComparison]::OrdinalIgnoreCase) -and !$desired.ContainsKey([string]$item.path)) {
+        $underPackPrefix = $false
+        foreach ($candidatePrefix in $prefixes) { if ($item.path.StartsWith($candidatePrefix + '/', [StringComparison]::OrdinalIgnoreCase)) { $underPackPrefix = $true; break } }
+        if ($item.type -ceq 'blob' -and $underPackPrefix -and !$desired.ContainsKey([string]$item.path)) {
             $treeItems.Add([pscustomobject]@{ path = [string]$item.path; mode = '100644'; type = 'blob'; sha = $null })
         }
     }
@@ -904,6 +946,32 @@ function Verify-KxRemoteSnapshot($Candidate, [string]$Commit, [bool]$VerifyAllJa
             if ((Get-KxSha256 $temp) -cne $entry.hash -or (Get-KxSha256 $local) -cne $entry.hash) { throw "Hash remoto/local distinto para $($entry.path)." }
         }
         finally { if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force } }
+    }
+    $siteRoot = Split-Path -Parent (Split-Path -Parent $Candidate.packRoot)
+    foreach ($channel in @('KxCraft', 'private-3players')) {
+        $aliasRoot = Join-Path $siteRoot ("pack\{0}" -f $channel)
+        $aliasBase = "https://francho2002.github.io/kxcraft/pack/$channel/"
+        $aliasGate = Read-KxJson (Join-Path $aliasRoot 'release.json')
+        if ($aliasGate.state -cne 'PUBLISHED' -or $aliasGate.releaseVersion -cne $Candidate.version -or $aliasGate.packTomlUrl -cne ($aliasBase + 'pack.toml')) { throw "El alias permanente $channel no publica la versión correcta." }
+        foreach ($relative in @('pack.toml', 'index.toml', 'release.json')) {
+            $localPath = Join-Path $aliasRoot $relative
+            $temp = Join-Path ([IO.Path]::GetTempPath()) ('kx-alias-' + [Guid]::NewGuid().ToString('N'))
+            try {
+                $null = Invoke-KxWebRequestWithRetry ($aliasBase + $relative) $temp 45 $headers
+                if ((Get-KxSha256 $temp) -cne (Get-KxSha256 $localPath)) { throw "Hash remoto distinto para el alias $channel/$relative." }
+            }
+            finally { if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force } }
+        }
+        foreach ($entry in $entries) {
+            $relative = [string]$entry.path
+            $localPath = Join-Path $aliasRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))
+            $temp = Join-Path ([IO.Path]::GetTempPath()) ('kx-alias-meta-' + [Guid]::NewGuid().ToString('N'))
+            try {
+                $null = Invoke-KxWebRequestWithRetry ($aliasBase + $relative) $temp 45 $headers
+                if ((Get-KxSha256 $temp) -cne $entry.hash -or (Get-KxSha256 $localPath) -cne $entry.hash) { throw "Hash remoto/local distinto para el alias $channel/$relative." }
+            }
+            finally { if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force } }
+        }
     }
     $changedNames = @{}
     foreach ($row in $Candidate.changes.added) { $changedNames[[string]$row.filename] = $true }
@@ -1020,6 +1088,7 @@ function Invoke-KxPublishUpdate {
         $release.sourceMapSha256 = Get-KxSha256 $sourceMapPath
         Write-KxJsonAtomic $releasePath $release
     }
+    Sync-KxPackCompatibilityChannels $review.siteRoot
     $null = Assert-KxSnapshot ([pscustomobject]@{ packRoot = $packRoot })
     $remoteCandidate = [pscustomobject]@{ version = $review.version; packRoot = $packRoot; sources = $review.sources; changes = $review.changes; profileRecords = @($review.profileRecords) }
     $script:currentPublishCandidate = $remoteCandidate
@@ -1033,7 +1102,23 @@ function Invoke-KxPublishUpdate {
         { param($x) } `
         { param($x) Publish-KxPackSnapshot $packRoot ("KxCraft modpack {0}" -f $review.version) $publishFiles } `
         { param($commit) $url = Wait-KxPagesDeployment $commit ([int]$script:KxConfig.github.pagesTimeoutSeconds); Verify-KxRemoteSnapshot $script:currentPublishCandidate $commit $false } `
-        { param($commit) $rollbackRoot = Join-Path $review.candidateRoot 'rollback-site'; $rollbackPack = Join-Path $rollbackRoot 'pack\managed-3players'; [IO.Directory]::CreateDirectory((Split-Path -Parent $rollbackPack)) | Out-Null; Copy-Item -LiteralPath $baseline.packRoot -Destination $rollbackPack -Recurse -Force; $oldRelease = Read-KxJson (Join-Path $rollbackPack 'release.json'); if ($oldRelease.state -cne 'PUBLISHED') { throw 'El snapshot de rollback no está PUBLISHED.' }; $rollbackFiles = @([pscustomobject]@{localPath=(Join-Path $rollbackRoot 'index.html');repositoryPath='site/index.html';binary=$false},[pscustomobject]@{localPath=(Join-Path $rollbackRoot 'updater\manifest.json');repositoryPath='site/updater/manifest.json';binary=$false},[pscustomobject]@{localPath=(Join-Path $rollbackRoot 'updater\manifest.sig');repositoryPath='site/updater/manifest.sig';binary=$false}); $rollbackCommit = Publish-KxPackSnapshot $rollbackPack 'KxCraft automatic rollback to last published Packwiz snapshot' $rollbackFiles; $null = Wait-KxPagesDeployment $rollbackCommit ([int]$script:KxConfig.github.pagesTimeoutSeconds); $rollbackCommit }
+        { param($commit)
+            $rollbackRoot = Join-Path $review.candidateRoot 'rollback-site'
+            $rollbackPack = Join-Path $rollbackRoot 'pack\managed-3players'
+            [IO.Directory]::CreateDirectory((Split-Path -Parent $rollbackPack)) | Out-Null
+            Copy-Item -LiteralPath $baseline.packRoot -Destination $rollbackPack -Recurse -Force
+            $oldRelease = Read-KxJson (Join-Path $rollbackPack 'release.json')
+            if ($oldRelease.state -cne 'PUBLISHED') { throw 'El snapshot de rollback no está PUBLISHED.' }
+            Sync-KxPackCompatibilityChannels $rollbackRoot
+            $rollbackFiles = @(
+                [pscustomobject]@{localPath=(Join-Path $rollbackRoot 'index.html');repositoryPath='site/index.html';binary=$false},
+                [pscustomobject]@{localPath=(Join-Path $rollbackRoot 'updater\manifest.json');repositoryPath='site/updater/manifest.json';binary=$false},
+                [pscustomobject]@{localPath=(Join-Path $rollbackRoot 'updater\manifest.sig');repositoryPath='site/updater/manifest.sig';binary=$false}
+            )
+            $rollbackCommit = Publish-KxPackSnapshot $rollbackPack 'KxCraft automatic rollback to last published Packwiz snapshot' $rollbackFiles
+            $null = Wait-KxPagesDeployment $rollbackCommit ([int]$script:KxConfig.github.pagesTimeoutSeconds)
+            $rollbackCommit
+        }
     $newPackRoot = Join-Path $candidateRoot 'site\pack\managed-3players'
     $inventoryOutput = Join-Path $candidateRoot 'published-inventory.json'
     $inventoryFiles = foreach ($row in $profile.records) { [pscustomobject]@{ filename = $row.filename; bytes = $row.bytes; sha256 = $row.sha256; modIds = @($row.modIds); projectName = $row.name; profileModVersion = $row.version; selectedForClient = $true } }

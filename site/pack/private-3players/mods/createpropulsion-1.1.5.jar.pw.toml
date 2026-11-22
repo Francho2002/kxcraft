@@ -1,0 +1,8 @@
+name = "Create Propulsion: Simulated"
+filename = "createpropulsion-1.1.5.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/5c6f0018e9fac6003ec0948d0fd6bf721982ed28/binaries/mods/createpropulsion-1.1.5.jar"
+hash-format = "sha256"
+hash = "bcab73af774a00c370d9b8b6593c42f0a20839979f5a85d5792d6baf7dc75bc0"

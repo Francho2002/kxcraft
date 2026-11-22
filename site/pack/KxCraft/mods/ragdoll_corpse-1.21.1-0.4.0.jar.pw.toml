@@ -1,0 +1,8 @@
+name = "Sable: Ragdoll Corpse"
+filename = "ragdoll_corpse-1.21.1-0.4.0.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/uetGbPKW/versions/7o7DeIN5/ragdoll_corpse-1.21.1-0.4.0.jar"
+hash-format = "sha256"
+hash = "86fee7f780560a3168440e56cb635d116d5b6dd19aececa10e0194ae5926e8f1"

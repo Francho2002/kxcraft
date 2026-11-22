@@ -1,0 +1,8 @@
+name = "UI Library Mod"
+filename = "blockui-1.0.209-1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/blockui-1.0.209-1.21.1.jar"
+hash-format = "sha256"
+hash = "eec023231b21a606306cac6c588b5b07f51741f5e5bc831dba709d52332b82ab"

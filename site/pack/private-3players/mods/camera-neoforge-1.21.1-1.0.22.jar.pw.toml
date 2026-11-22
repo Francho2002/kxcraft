@@ -1,0 +1,8 @@
+name = "Camera Mod"
+filename = "camera-neoforge-1.21.1-1.0.22.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/oiuNWinn/versions/VKavoCru/camera-neoforge-1.21.1-1.0.22.jar"
+hash-format = "sha256"
+hash = "9df29ae6f40e1aa9a7abdb9811403b3c00045fa7a5c59eba34f476d4b5d99499"

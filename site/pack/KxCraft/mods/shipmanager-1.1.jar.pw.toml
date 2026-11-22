@@ -1,0 +1,8 @@
+name = "Create Aeronautics: Ship Manager"
+filename = "shipmanager-1.1.jar"
+side = "client"
+
+[download]
+url = "https://mediafilez.forgecdn.net/files/8281/390/shipmanager-1.1.jar"
+hash-format = "sha256"
+hash = "e04564298617ec3073ca38731f90f8f6045685f909a95768934aff29d69e957b"

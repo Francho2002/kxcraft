@@ -1,0 +1,8 @@
+name = "Create: Loconautics"
+filename = "loconautics-0.1.3BETA.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9627/28/loconautics-0.1.3BETA.jar"
+hash-format = "sha256"
+hash = "2cd0b33189b2ebdb3551b59aa8fb5cfef6b4b89d238b99b0185cf45bec05e5de"

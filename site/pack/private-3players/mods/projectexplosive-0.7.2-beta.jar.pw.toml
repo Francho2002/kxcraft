@@ -1,0 +1,8 @@
+name = "Project: Explosive"
+filename = "projectexplosive-0.7.2-beta.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/3rXU9gz8/versions/ZLwuD5gm/projectexplosive-0.7.2-beta.jar"
+hash-format = "sha256"
+hash = "3cbf5a76d8b6123a489df54f0165c31df6c5f6993dd07e9506232fcb3f3cebb2"

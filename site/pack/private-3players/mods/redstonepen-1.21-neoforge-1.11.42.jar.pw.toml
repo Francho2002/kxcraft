@@ -1,0 +1,8 @@
+name = "Redstone Pen"
+filename = "redstonepen-1.21-neoforge-1.11.42.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/DwE83ioX/versions/lpcV2XTc/redstonepen-1.21-neoforge-1.11.42.jar"
+hash-format = "sha256"
+hash = "c5da28a85a77fb0c12e6c71a15f5007eccedbf901f825b21b5366250a73f0915"

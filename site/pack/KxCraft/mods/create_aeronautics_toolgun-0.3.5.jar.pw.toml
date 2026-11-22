@@ -1,0 +1,8 @@
+name = "Create Aeronautics: Toolgun"
+filename = "create_aeronautics_toolgun-0.3.5.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/5fUBLqeW/versions/f2YAbYME/create_aeronautics_toolgun-0.3.5.jar"
+hash-format = "sha256"
+hash = "809983a151b25ac638b813a1ee104fae7966ec1393d6386b6b45f5429207f668"

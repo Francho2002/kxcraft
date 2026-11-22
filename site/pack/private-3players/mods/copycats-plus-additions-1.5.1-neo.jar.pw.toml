@@ -1,0 +1,8 @@
+name = "Copycats+ Additions"
+filename = "copycats-plus-additions-1.5.1-neo.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9511/957/copycats-plus-additions-1.5.1-neo.jar"
+hash-format = "sha256"
+hash = "d59c9b86c86a167ff5c3608d9ef64b2b8a4a1c3186783eefcfa3f665646ddb7d"

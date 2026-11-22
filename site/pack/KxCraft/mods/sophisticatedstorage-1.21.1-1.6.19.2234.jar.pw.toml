@@ -1,0 +1,8 @@
+name = "Sophisticated Storage"
+filename = "sophisticatedstorage-1.21.1-1.6.19.2234.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9651/620/sophisticatedstorage-1.21.1-1.6.19.2234.jar"
+hash-format = "sha256"
+hash = "dd738bde0692428b5d73b1fffc1b6dd324a2ebcecae231e376babce6d92ecfc6"

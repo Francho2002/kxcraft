@@ -1,0 +1,8 @@
+name = "Create: Pure Glass"
+filename = "createpureglass-1.0.0.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/5LllNPr8/versions/GsRIZFPs/createpureglass-1.0.0.jar"
+hash-format = "sha256"
+hash = "b4dc64764535015e66d0150cec6d40bf43139938e55827315a6f83a9bbfd2dd0"

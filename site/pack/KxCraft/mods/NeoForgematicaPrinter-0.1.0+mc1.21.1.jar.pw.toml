@@ -1,0 +1,8 @@
+name = "Forgematica Printer"
+filename = "NeoForgematicaPrinter-0.1.0+mc1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/NeoForgematicaPrinter-0.1.0%2Bmc1.21.1.jar"
+hash-format = "sha256"
+hash = "ac99f69aa21e7dc3c4c6b7d951ece961672140bea6f31c32f59ac6b5c1a7496e"

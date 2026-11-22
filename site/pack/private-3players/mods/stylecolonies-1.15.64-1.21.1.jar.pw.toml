@@ -1,0 +1,8 @@
+name = "Stylecolonies"
+filename = "stylecolonies-1.15.64-1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9173/39/stylecolonies-1.15.64-1.21.1.jar"
+hash-format = "sha256"
+hash = "93f28ea8cbaa4a3bbb6106131b9aa9748693d5fd874572d05347b338c0d36207"

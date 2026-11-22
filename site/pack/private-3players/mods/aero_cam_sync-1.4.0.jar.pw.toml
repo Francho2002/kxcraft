@@ -1,0 +1,8 @@
+name = "Aeronautics Camera Sync"
+filename = "aero_cam_sync-1.4.0.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/aero_cam_sync-1.4.0.jar"
+hash-format = "sha256"
+hash = "335ecaf8cefa4792815a81ac7257e5d432ee1c30704187fc548f1d1db855f4e2"

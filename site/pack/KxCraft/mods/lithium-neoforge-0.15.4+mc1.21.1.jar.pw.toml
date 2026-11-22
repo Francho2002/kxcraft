@@ -1,0 +1,8 @@
+name = "Lithium"
+filename = "lithium-neoforge-0.15.4+mc1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://raw.githubusercontent.com/Francho2002/kxcraft/1b179e32391fbdb0a615fcdfb003368216493777/binaries/mods/lithium-neoforge-0.15.4%2Bmc1.21.1.jar"
+hash-format = "sha256"
+hash = "488f33216030c1cb0baa33e59de3d657d08d5795a6c2080c8c8bbbc133fc8757"

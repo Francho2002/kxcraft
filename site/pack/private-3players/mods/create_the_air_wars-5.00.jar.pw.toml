@@ -1,0 +1,8 @@
+name = "Create: The Air War"
+filename = "create_the_air_wars-5.00.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/GMrNnOis/versions/moqz93W3/create_the_air_wars-5.00.jar"
+hash-format = "sha256"
+hash = "09f87736350cc23eb578b9868d7767268ef748b1ede8a995c51ee788282e6c1c"
