@@ -63,28 +63,73 @@
     return image;
   }
 
+  // Galería ilustrativa: consultar solo al abrir la ficha, sin cargar 78 proyectos
+  // al entrar en el catálogo. El error de red nunca impide abrir el detalle.
+  const galleryCache = new Map();
+  let currentDetailToken = 0;
+
+  const safeProjectGallery = async (projectId) => {
+    if (!/^[A-Za-z0-9]{7,12}$/.test(projectId)) return null;
+    if (!galleryCache.has(projectId)) {
+      const request = fetch("https://api.modrinth.com/v2/project/" + encodeURIComponent(projectId), {
+        mode: "cors", credentials: "omit", referrerPolicy: "no-referrer"
+      }).then(async (response) => {
+        if (!response.ok) return null;
+        const project = await response.json();
+        if (!Array.isArray(project.gallery)) return null;
+        const gallery = project.gallery.find((entry) => entry.featured) || project.gallery[0];
+        if (!gallery || typeof gallery.url !== "string") return null;
+        const url = new URL(gallery.url);
+        return url.protocol === "https:" && url.hostname === "cdn.modrinth.com" ? url.href : null;
+      }).catch(() => null);
+      galleryCache.set(projectId, request);
+    }
+    return galleryCache.get(projectId);
+  };
+
+  const makeDetailImage = (url, alt, mod, token) => {
+    if (!/^https:\/\//i.test(url)) return;
+    const image = document.createElement("img");
+    image.className = "mod-detail-image";
+    image.src = url;
+    image.alt = alt;
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.referrerPolicy = "no-referrer";
+    image.addEventListener("error", () => {
+      if (currentDetailToken === token) dialogMedia.replaceChildren(makeIcon(mod, true));
+    }, { once: true });
+    dialogMedia.replaceChildren(image);
+  };
+
   function openDetails(mod) {
     if (!dialog || typeof dialog.showModal !== "function") return;
+    const token = ++currentDetailToken;
     dialogTitle.textContent = mod.name;
     dialogDescription.textContent = mod.description;
     dialogCategory.textContent = mod.category;
+    dialogMedia.replaceChildren(makeIcon(mod, true));
     if (mod.image && /^https:\/\//i.test(mod.image)) {
-      const galleryImage = document.createElement("img");
-      galleryImage.className = "mod-detail-image";
-      galleryImage.src = mod.image;
-      galleryImage.alt = mod.imageAlt || (mod.name + ", captura del mod");
-      galleryImage.loading = "lazy";
-      galleryImage.decoding = "async";
-      galleryImage.referrerPolicy = "no-referrer";
-      galleryImage.addEventListener("error", () => galleryImage.replaceWith(makeIcon(mod, true)), { once: true });
-      dialogMedia.replaceChildren(galleryImage);
+      makeDetailImage(mod.image, mod.imageAlt || (mod.name + ", captura del mod"), mod, token);
     } else {
-      dialogMedia.replaceChildren(makeIcon(mod, true));
+      // La miniatura de YouTube se presenta como tal; no se confunde con una
+      // captura del mod. Si existe galería oficial, reemplaza esa miniatura.
+      if (mod.video && /^[A-Za-z0-9_-]{11}$/.test(mod.video.id)) {
+        makeDetailImage("https://i.ytimg.com/vi/" + mod.video.id + "/hqdefault.jpg",
+          mod.name + ", miniatura del video enlazado", mod, token);
+      }
+      if (mod.galleryProjectId) {
+        void safeProjectGallery(mod.galleryProjectId).then((galleryUrl) => {
+          if (galleryUrl && currentDetailToken === token && dialog.open) {
+            makeDetailImage(galleryUrl, mod.name + ", imagen de la galería del proyecto", mod, token);
+          }
+        });
+      }
     }
     if (dialogVideo) {
       dialogVideo.replaceChildren();
-      dialogVideo.hidden = !mod.video;
-      if (mod.video) {
+      dialogVideo.hidden = false;
+      if (mod.video && /^[A-Za-z0-9_-]{11}$/.test(mod.video.id)) {
         dialogVideo.append(makeElement("h3", "", mod.video.title));
         const frame = document.createElement("iframe");
         frame.className = "dialog-video-frame";
@@ -101,13 +146,24 @@
         sourceLink.target = "_blank";
         sourceLink.rel = "noopener noreferrer";
         dialogVideo.append(sourceLink);
+      } else {
+        dialogVideo.append(makeElement("h3", "", "Demostraciones y tutoriales"));
+        dialogVideo.append(makeElement("p", "dialog-video-meta", "Todavía no hay un video enlazado para este mod."));
+        const findVideos = makeElement("a", "dialog-video-link", "Buscar videos de este mod en YouTube ↗");
+        findVideos.href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(mod.name + " Minecraft mod showcase");
+        findVideos.target = "_blank";
+        findVideos.rel = "noopener noreferrer";
+        dialogVideo.append(findVideos);
       }
     }
     dialog.showModal();
   }
 
   if (dialog && dialogVideo) {
-    dialog.addEventListener("close", () => dialogVideo.replaceChildren());
+    dialog.addEventListener("close", () => {
+      ++currentDetailToken;
+      dialogVideo.replaceChildren();
+    });
   }
 
   function drawFilters() {

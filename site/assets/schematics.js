@@ -6,28 +6,30 @@
   const countNode = document.getElementById("schematics-count");
   const emptyNode = document.getElementById("schematics-empty");
   const searchInput = document.getElementById("schematics-search");
-  const categorySelect = document.getElementById("schematics-category");
-  if (!dataNode || !grid || !countNode || !emptyNode || !searchInput || !categorySelect) return;
-
-  const editorRequested = new URLSearchParams(window.location.search).get("editar-precios") === "1";
-  const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
-  const priceEditorEnabled = editorRequested && (window.location.protocol === "file:" || localHosts.has(window.location.hostname.toLowerCase()));
-  const priceStorageKey = "kxcraft-store-price-overrides-v1";
-  const priceOverrides = Object.create(null);
-  let priceStorageAvailable = true;
-
-  if (priceEditorEnabled) {
-    try {
-      const savedOverrides = JSON.parse(window.localStorage.getItem(priceStorageKey) || "{}");
-      if (savedOverrides && typeof savedOverrides === "object" && !Array.isArray(savedOverrides)) {
-        for (const [id, value] of Object.entries(savedOverrides)) {
-          if (typeof value === "string") priceOverrides[id] = value;
-        }
-      }
-    } catch {
-      priceStorageAvailable = false;
-    }
+  const categoryFilters = document.getElementById("schematics-category-filters");
+  const aircraftClassifier = document.getElementById("schematics-aircraft-classifier");
+  const aircraftFilters = document.getElementById("schematics-aircraft-filters");
+  const backToTop = document.getElementById("back-to-top");
+  if (backToTop) {
+    const updateBackToTop = () => { backToTop.hidden = window.scrollY < 480; };
+    window.addEventListener("scroll", updateBackToTop, { passive: true });
+    backToTop.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
+    updateBackToTop();
   }
+  if (!dataNode || !grid || !countNode || !emptyNode || !searchInput || !categoryFilters || !aircraftClassifier || !aircraftFilters) return;
+
+  const survivalWarningTypes = new Set([
+    "creative_motor",
+    "creative_power",
+    "creative_ammunition",
+    "creative_component",
+    "survival_adaptation",
+    "version_compatibility",
+    "functional_issue",
+    "dependency_note"
+  ]);
 
   const makeElement = (tag, className, text) => {
     const element = document.createElement(tag);
@@ -45,6 +47,26 @@
     }
   };
 
+  const localSchematicImages = new Set([
+    "assets/kxcraft-jumbo-green-airplane.png",
+    "assets/kxcraft-landkreuzer-ratte.png"
+  ]);
+
+  const safeSchematicImageUrl = (value) => {
+    const source = String(value ?? "").trim();
+    if (localSchematicImages.has(source)) {
+      try {
+        return new URL(source, document.baseURI);
+      } catch {
+        return null;
+      }
+    }
+    const url = safeUrl(source);
+    if (url?.hostname === "createmod.com" && url.pathname.startsWith("/api/files/schematics/")) return url;
+    if (url?.hostname === "i.ytimg.com" && /^\/vi\/[a-zA-Z0-9_-]{11}\/hqdefault\.jpg$/.test(url.pathname)) return url;
+    return null;
+  };
+
   let source;
   try {
     source = JSON.parse(dataNode.textContent);
@@ -55,19 +77,127 @@
   const items = allItems.filter((item) => {
     const createUrl = safeUrl(item?.createUrl);
     const imageUrl = String(item?.imageUrl ?? "").trim();
-    const validImage = !imageUrl || (safeUrl(imageUrl)?.hostname === "createmod.com" &&
-      safeUrl(imageUrl)?.pathname.startsWith("/api/files/schematics/"));
+    const warnings = item?.survivalWarnings ?? [];
+    const validImage = !imageUrl || localSchematicImages.has(imageUrl) || Boolean(safeSchematicImageUrl(imageUrl));
+    const validSchematicPath = Boolean(createUrl &&
+      (createUrl.pathname.startsWith("/schematics/") || createUrl.pathname.startsWith("/es/schematics/")));
+    const validWarnings = Array.isArray(warnings) && warnings.every((warning) =>
+      warning && survivalWarningTypes.has(warning.type) && typeof warning.description === "string");
     return item && typeof item.title === "string" && typeof item.category === "string" &&
       typeof item.price === "string" && Array.isArray(item.requiredMods) &&
       Array.isArray(item.missingMods) && ["listed", "not_listed"].includes(item.requirementsStatus) &&
-      createUrl?.hostname === "createmod.com" && createUrl.pathname.startsWith("/schematics/") && validImage;
+      createUrl?.hostname === "createmod.com" && validSchematicPath && validImage && validWarnings;
   });
 
+  // Preferir IDs de bloques publicados en CreateMod, con registro del origen.
+  // El esquema histórico de auditoría de registros se conserva por compatibilidad.
+  // Una coincidencia nominal de mods nunca demuestra paridad de IDs.
+  const blockIdPattern = /^[a-z0-9_.-]+:[a-z0-9_.\/-]+$/;
+  const isExactBlockIdAudit = (audit) => {
+    if (!audit || audit.method !== "exact-block-id" ||
+        audit.source !== "schematic-nbt-palette-vs-installed-block-registry" ||
+        typeof audit.schematicSha256 !== "string" ||
+        typeof audit.registrySha256 !== "string" ||
+        !/^[0-9a-f]{64}$/.test(audit.schematicSha256) ||
+        !/^[0-9a-f]{64}$/.test(audit.registrySha256) ||
+        !Array.isArray(audit.requiredBlockIds) || !Array.isArray(audit.missingBlockIds) ||
+        !Number.isSafeInteger(audit.registeredBlockCount) || audit.registeredBlockCount < 1 ||
+        audit.requiredBlockIds.length < 1 ||
+        !audit.requiredBlockIds.every((id) => typeof id === "string" && blockIdPattern.test(id)) ||
+        !audit.missingBlockIds.every((id) => typeof id === "string" && blockIdPattern.test(id))) return false;
+    const required = new Set(audit.requiredBlockIds);
+    return required.size === audit.requiredBlockIds.length &&
+      audit.missingBlockIds.length === new Set(audit.missingBlockIds).size &&
+      audit.missingBlockIds.every((id) => required.has(id));
+  };
+
   const categories = [...new Set(items.map((item) => item.category))].sort((a, b) => a.localeCompare(b, "es"));
-  for (const category of categories) {
-    const option = makeElement("option", "", category);
-    option.value = category;
-    categorySelect.append(option);
+  const categoryKeys = new Map([
+    ["Aeronaves", "aeronaves"],
+    ["Artillería y defensa", "defensa"],
+    ["Bases e infraestructura", "infraestructura"],
+    ["Energía y generación", "energia"],
+    ["Granjas y recursos", "granjas"],
+    ["Industria y automatización", "industria"],
+    ["Náutica", "nautica"],
+    ["Naves espaciales", "espacio"],
+    ["Pociones y alquimia", "alquimia"],
+    ["Robótica y mechas", "robotica"],
+    ["Trenes y ferrocarril", "trenes"],
+    ["Vehículos terrestres", "terrestres"]
+  ]);
+  const categoryKey = (category) => categoryKeys.get(category) || "general";
+  const defaultCategory = categories.includes("Aeronaves") ? "Aeronaves" : "all";
+  let activeCategory = defaultCategory;
+  let activeAircraftSubcategory = null;
+  const aircraftItems = items.filter((item) => item.category === "Aeronaves");
+  const aircraftSubcategories = [
+    "Cazas e interceptores",
+    "Ataque y bombardeo",
+    "Helicópteros",
+    "VTOL y tiltrotor",
+    "Transporte y carga",
+    "Dirigibles y cruceros",
+    "Hidroaviones",
+    "Civiles y personales",
+    "Prototipos",
+    "Diseños especiales"
+  ];
+  const aircraftSubcategoryCounts = new Map(aircraftSubcategories.map((subcategory) => [
+    subcategory,
+    aircraftItems.filter((item) => item.subcategory === subcategory).length
+  ]));
+
+  const syncFilterStates = () => {
+    aircraftClassifier.hidden = activeCategory !== "Aeronaves";
+    for (const filter of categoryFilters.querySelectorAll(".schematic-category-filter")) {
+      filter.setAttribute("aria-pressed", filter.dataset.category === activeCategory ? "true" : "false");
+    }
+    for (const filter of aircraftFilters.querySelectorAll(".schematic-subcategory-filter")) {
+      filter.setAttribute("aria-pressed", filter.dataset.subcategory === activeAircraftSubcategory ? "true" : "false");
+    }
+  };
+
+  const categoryButton = (category, count, filterValue = category) => {
+    const button = makeElement("button", "schematic-category-filter");
+    button.type = "button";
+    button.dataset.category = filterValue;
+    button.dataset.categoryKey = categoryKey(category);
+    button.setAttribute("aria-pressed", "false");
+    button.append(makeElement("span", "schematic-category-filter-name", category));
+    button.append(makeElement("span", "schematic-category-filter-count", String(count)));
+    button.addEventListener("click", () => {
+      if (filterValue === "Aeronaves" && activeCategory === "Aeronaves" && activeAircraftSubcategory) {
+        activeAircraftSubcategory = null;
+      } else {
+        activeCategory = activeCategory === filterValue ? "all" : filterValue;
+        activeAircraftSubcategory = null;
+      }
+      syncFilterStates();
+      render();
+    });
+    return button;
+  };
+
+  const categoryCounts = new Map(categories.map((category) => [category, items.filter((item) => item.category === category).length]));
+  for (const category of categories) categoryFilters.append(categoryButton(category, categoryCounts.get(category)));
+  for (const subcategory of aircraftSubcategories) {
+    const count = aircraftSubcategoryCounts.get(subcategory);
+    if (!count) continue;
+    const button = makeElement("button", "schematic-category-filter schematic-subcategory-filter");
+    button.type = "button";
+    button.dataset.subcategory = subcategory;
+    button.dataset.categoryKey = "aeronaves";
+    button.setAttribute("aria-pressed", "false");
+    button.append(makeElement("span", "schematic-category-filter-name", subcategory));
+    button.append(makeElement("span", "schematic-category-filter-count", String(count)));
+    button.addEventListener("click", () => {
+      activeCategory = "Aeronaves";
+      activeAircraftSubcategory = activeAircraftSubcategory === subcategory ? null : subcategory;
+      syncFilterStates();
+      render();
+    });
+    aircraftFilters.append(button);
   }
 
   const makeModList = (names, className) => {
@@ -76,82 +206,14 @@
     return list;
   };
 
-  const persistPriceOverrides = () => {
-    try {
-      window.localStorage.setItem(priceStorageKey, JSON.stringify(priceOverrides));
-      priceStorageAvailable = true;
-    } catch {
-      priceStorageAvailable = false;
-    }
-  };
-
-  const exportPriceOverrides = () => {
-    const prices = Object.entries(priceOverrides).map(([id, price]) => {
-      const item = items.find((candidate) => candidate.id === id);
-      return { id, title: item?.title || id, price };
-    });
-    const payload = {
-      schemaVersion: 1,
-      exportedAt: new Date().toISOString(),
-      prices
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = makeElement("a");
-    link.href = url;
-    link.download = "kxcraft-precios-temporales.json";
-    link.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const addPriceEditor = () => {
-    if (!priceEditorEnabled) return;
-    const banner = makeElement("aside", "store-price-editor");
-    banner.setAttribute("aria-label", "Editor local temporal de precios");
-    const copy = makeElement("div", "store-price-editor-copy");
-    copy.append(makeElement("strong", "", "Edición local de precios"));
-    const status = makeElement("span", "store-price-editor-status");
-    const updateStatus = () => {
-      const count = Object.keys(priceOverrides).length;
-      status.textContent = priceStorageAvailable
-        ? `${count} precio${count === 1 ? "" : "s"} editado${count === 1 ? "" : "s"}; se guarda en este navegador.`
-        : "El navegador no permite guardar localmente. Exportá los cambios antes de cerrar.";
-    };
-    copy.append(status);
-
-    const actions = makeElement("div", "store-price-editor-actions");
-    const exportButton = makeElement("button", "store-price-editor-button", "Exportar precios");
-    exportButton.type = "button";
-    exportButton.addEventListener("click", exportPriceOverrides);
-    const resetButton = makeElement("button", "store-price-editor-button store-price-editor-button--quiet", "Borrar cambios");
-    resetButton.type = "button";
-    resetButton.addEventListener("click", () => {
-      if (!window.confirm("¿Borrar los precios temporales guardados en este navegador?")) return;
-      for (const id of Object.keys(priceOverrides)) delete priceOverrides[id];
-      try {
-        window.localStorage.removeItem(priceStorageKey);
-        priceStorageAvailable = true;
-      } catch {
-        priceStorageAvailable = false;
-      }
-      updateStatus();
-      render();
-    });
-    actions.append(exportButton, resetButton);
-    banner.append(copy, actions);
-    grid.parentElement.insertBefore(banner, grid);
-    updateStatus();
-    return updateStatus;
-  };
-
-  const updateEditorStatus = addPriceEditor();
-
   const makeCard = (item) => {
     const createUrl = safeUrl(item.createUrl);
     const card = makeElement("article", "schematic-card");
+    card.dataset.categoryKey = categoryKey(item.category);
+    if (item.id === "mini-autokannon") card.classList.add("schematic-card--mini-spotlight");
     const media = makeElement("div", "schematic-media");
-    const imageUrl = safeUrl(item.imageUrl);
-
+    media.dataset.categoryKey = categoryKey(item.category);
+    const imageUrl = safeSchematicImageUrl(item.imageUrl);
     const makeCreateLink = (className, label) => {
       const link = makeElement("a", className, label);
       link.href = createUrl.href;
@@ -168,95 +230,153 @@
       image.loading = "lazy";
       image.decoding = "async";
       image.referrerPolicy = "no-referrer";
-      image.addEventListener("error", () => {
-        media.replaceChildren(makeCreateLink("schematic-image-fallback", "Vista previa no disponible. Abrir en CreateMod"));
-      }, { once: true });
       const imageLink = makeCreateLink("schematic-image-link", "");
       imageLink.append(image);
+      image.addEventListener("error", () => {
+        card.classList.add("schematic-card--image-missing");
+        imageLink.replaceWith(makeCreateLink("schematic-image-fallback", "Ver imágenes originales en CreateMod"));
+      }, { once: true });
       media.append(imageLink);
     } else {
-      media.append(makeCreateLink("schematic-image-fallback", "Vista previa no disponible. Abrir en CreateMod"));
+      card.classList.add("schematic-card--image-missing");
+      const fallback = makeCreateLink("schematic-image-fallback", "Ver imágenes originales en CreateMod");
+      fallback.dataset.categoryKey = categoryKey(item.category);
+      media.append(fallback);
+      // Foto real en CreateMod: recuperación por metadatos de la ficha exacta.
+      if (window.KxCreateModPreview) {
+        window.KxCreateModPreview.watch(media, item.createUrl, (photoUrl) => {
+          if (!photoUrl || !media.isConnected) return;
+          const photo = safeSchematicImageUrl(photoUrl);
+          if (!photo) return;
+          const picture = document.createElement("img");
+          picture.src = photo.href;
+          picture.alt = "Vista original de " + item.title + " en CreateMod";
+          picture.loading = "lazy";
+          picture.decoding = "async";
+          picture.referrerPolicy = "no-referrer";
+          picture.addEventListener("load", () => {
+            card.classList.remove("schematic-card--image-missing");
+            const photoLink = makeCreateLink("schematic-image-link", "");
+            photoLink.append(picture);
+            fallback.replaceWith(photoLink);
+          }, {once:true});
+        });
+      }
     }
 
     const body = makeElement("div", "schematic-body");
-    body.append(makeElement("span", "schematic-category", item.category));
+    const badgeRow = makeElement("div", "schematic-badges");
+    const badge = makeElement("span", "schematic-category", item.category);
+    badge.dataset.categoryKey = categoryKey(item.category);
+    badgeRow.append(badge);
+    if (item.id === "mini-autokannon") badgeRow.append(makeElement("span", "schematic-highlight-badge", "Cañón compacto"));
+    if (item.category === "Aeronaves" && item.subcategory) {
+      badgeRow.append(makeElement("span", "schematic-subcategory-badge", item.subcategory));
+    }
+    body.append(badgeRow);
     body.append(makeElement("h2", "schematic-title", item.title));
-    if (item.description) body.append(makeElement("p", "schematic-description", item.description));
+    // Mostrar exclusivamente una línea cuando la schematic utiliza elementos creativos.
+    // Las auditorías técnicas permanecen en el JSON; no saturar las tarjetas con adaptaciones.
+    if (typeof item.creativeNotice === "string" && item.creativeNotice.trim()) {
+      body.append(makeElement("p", "schematic-creative-notice", "⚠ " + item.creativeNotice));
+    }
+    // Descripciones públicas solo para artillería y para fichas de construcción con precio.
+    // Las demás tarjetas permanecen compactas.
+    if (item.category === "Artillería y defensa"
+        && typeof item.description === "string" && item.description.trim()) {
+      body.append(makeElement("p", "schematic-description", item.description));
+    }
+    const required = Array.isArray(item.requiredMods) ? item.requiredMods : [];
+    const details = document.createElement("details");
+    details.className = "schematic-requirements";
+    details.open = item.requirementsExpanded === true;
+    details.append(makeElement("summary", "", "Mods requeridos (" + required.length + ")"));
+    details.append(makeModList(required.length ? required : ["Sin datos"], "schematic-mod-list"));
+    body.append(details);
 
-    if (item.requirementsStatus === "listed") {
-      const details = document.createElement("details");
-      details.className = "schematic-requirements";
-      const requirementCount = item.requiredMods.length;
-      const requirementLabel = requirementCount === 1
-        ? "1 tecnología requerida"
-        : requirementCount + " tecnologías requeridas";
-      details.append(makeElement("summary", "", requirementLabel));
-      details.append(makeModList(item.requiredMods, "schematic-mod-list"));
-      body.append(details);
-
-      if (item.missingMods.length) {
-        const missing = makeElement("div", "schematic-fit schematic-fit--missing");
-        missing.append(makeElement("strong", "", "Faltan en KxCraft:"));
-        missing.append(makeModList(item.missingMods, "schematic-missing-list"));
-        body.append(missing);
+    const inventory = item.requirementsInventory;
+    const materials = item.materialsAudit;
+    const missingByMaterials = Array.isArray(materials?.missingCatalogNamespaces)
+      ? materials.missingCatalogNamespaces.map((entry) => entry?.modName).filter((name) => typeof name === "string" && name.trim())
+      : [];
+    // struts sigue en el inventario técnico, pero se retira su alerta pública a pedido.
+    const hideStrutsWarning = (name) => /^struts(?:\s*\(mod no identificado\))?$/i.test(String(name).trim());
+    const confirmed = [...new Set([...missingByMaterials, ...(item.missingMods || [])])]
+      .filter((name) => !hideStrutsWarning(name));
+    const maybeMissing = Array.isArray(inventory?.notInCatalog)
+      ? inventory.notInCatalog.filter((name) =>
+          typeof name === "string" && !hideStrutsWarning(name) &&
+          // Create Train Lights se incorporó después de la fecha del catálogo privado.
+          name !== "Create Train Lights" &&
+          !confirmed.some((known) => known.toLocaleLowerCase("es") === name.toLocaleLowerCase("es")))
+      : [];
+    // Etiquetar únicamente los mods faltantes, sin cambiar sus nombres internos.
+    // Los namespaces sin identidad resuelta no tienen categoría demostrada.
+    const formatMissingMod = (name) => {
+      if (/\(mod no identificado\)/i.test(name)) return name;
+      const kind = /^(?:Create Aeronautics: Claims|Create: Claims)$/i.test(name.trim())
+        ? "funcional" : "decorativo";
+      return `${name} (${kind})`;
+    };
+    // Solo mostrar una advertencia cuando hay nombres concretos que enumerar.
+    // Si no se identificó ninguno, no se crea ningún elemento de "Mods faltantes".
+    if (confirmed.length || maybeMissing.length) {
+      const missingPanel = makeElement("div", "schematic-fit " +
+        (confirmed.length ? "schematic-fit--missing" : "schematic-fit--unknown"));
+      if (confirmed.length) {
+        missingPanel.append(makeElement("strong", "", "Mods faltantes: "));
+        missingPanel.append(document.createTextNode(confirmed.map(formatMissingMod).join(", ")));
+        if (maybeMissing.length) {
+          missingPanel.append(makeElement("div", "", "Por confirmar: " + [...new Set(maybeMissing)].map(formatMissingMod).join(", ")));
+        }
       } else {
-        body.append(makeElement("p", "schematic-fit schematic-fit--ok", "Los bloques y tecnologías listados están disponibles en KxCraft."));
+        missingPanel.append(makeElement("strong", "", "Mods faltantes por confirmar: "));
+        missingPanel.append(document.createTextNode([...new Set(maybeMissing)].map(formatMissingMod).join(", ")));
       }
-    } else {
-      body.append(makeElement("p", "schematic-fit schematic-fit--unknown",
-        "La ficha de CreateMod no enumera las tecnologías requeridas."));
+      body.append(missingPanel);
     }
 
     const actions = makeElement("div", "schematic-actions");
-    const price = makeElement("div", "schematic-price");
-    price.append(makeElement("span", "", "Construcción armada"));
-    const currentPrice = Object.prototype.hasOwnProperty.call(priceOverrides, item.id)
-      ? priceOverrides[item.id]
-      : item.price;
-    if (priceEditorEnabled) {
-      const editor = makeElement("label", "schematic-price-editor-label", "Precio");
-      const input = document.createElement("input");
-      input.className = "schematic-price-editor-input";
-      input.type = "text";
-      input.value = currentPrice;
-      input.maxLength = 80;
-      input.setAttribute("aria-label", "Precio de " + item.title);
-      input.autocomplete = "off";
-      input.addEventListener("input", () => {
-        const value = input.value;
-        if (value === item.price) delete priceOverrides[item.id];
-        else priceOverrides[item.id] = value;
-        persistPriceOverrides();
-        updateEditorStatus?.();
-      });
-      editor.append(input);
-      price.append(editor);
-    } else {
-      price.append(makeElement("strong", "", "Precio: " + currentPrice));
-    }
-
-    actions.append(price);
+    const freePlanNote = makeElement("p", "schematic-free-plan", imageUrl
+      ? "Haz clic en la imagen para abrir los planos en CreateMod."
+      : "Abrí la ficha en CreateMod para ver las imágenes y descargar los planos.");
+    actions.append(freePlanNote);
     card.append(media, body, actions);
     return card;
   };
 
   const render = () => {
     const query = searchInput.value.trim().toLocaleLowerCase("es");
-    const category = categorySelect.value;
-    const visible = items.filter((item) => {
-      const text = [item.title, item.category, ...(item.requiredMods || []), ...(item.missingMods || [])]
+    const filtered = items.filter((item) => {
+      const text = [item.title, item.category, item.subcategory, item.description, ...(item.requiredMods || []), ...(item.missingMods || []), ...(item.requirementsInventory?.notInCatalog || []), ...(item.materialsAudit?.missingCatalogNamespaces || []).flatMap(m => [m.modName, ...(m.blocks || []).map(b => b.id)]), item.creativeNotice || ""]
         .join(" ").toLocaleLowerCase("es");
-      return (!query || text.includes(query)) && (category === "all" || item.category === category);
+      const matchesCategory = activeCategory === "all"
+        || item.category === activeCategory;
+      const matchesAircraftSubcategory = activeCategory !== "Aeronaves" || !activeAircraftSubcategory || item.subcategory === activeAircraftSubcategory;
+      return (!query || text.includes(query)) && matchesCategory && matchesAircraftSubcategory;
     });
+    const visible = filtered;
 
     grid.replaceChildren(...visible.map(makeCard));
-    countNode.textContent = visible.length === items.length
-      ? items.length + " schematics · " + categories.length + " categorías"
-      : visible.length + " de " + items.length + " schematics";
+    const displayedCategoryCount = categories.length;
+    if (activeCategory === "Aeronaves" && activeAircraftSubcategory) {
+      const subtypeCount = aircraftSubcategoryCounts.get(activeAircraftSubcategory) || 0;
+      countNode.textContent = query
+        ? visible.length + " de " + subtypeCount + " modelos · " + activeAircraftSubcategory
+        : subtypeCount + " modelos · " + activeAircraftSubcategory + " · " + aircraftItems.length + " aeronaves";
+    } else if (activeCategory === "Aeronaves") {
+      const typeCount = aircraftSubcategories.filter((subcategory) => aircraftSubcategoryCounts.get(subcategory) > 0).length;
+      countNode.textContent = query
+        ? visible.length + " de " + aircraftItems.length + " aeronaves"
+        : aircraftItems.length + " aeronaves · " + typeCount + " tipos";
+    } else {
+      countNode.textContent = visible.length === items.length
+        ? items.length + " schematics · " + displayedCategoryCount + " categorías"
+        : visible.length + " de " + items.length + " schematics";
+    }
     emptyNode.hidden = visible.length > 0;
   };
 
   searchInput.addEventListener("input", render);
-  categorySelect.addEventListener("change", render);
   render();
 })();

@@ -14,10 +14,14 @@ $channels = @('managed-3players')
 $publicWebFiles = @(
     'index.html',
     'mods.html',
+    'schematics.html',
     'tienda.html',
     'assets/app.js',
+    'assets/createmod-previews.js',
     'assets/site.css',
     'assets/schematics.js',
+    'assets/store-expiry.js',
+    'assets/tienda.js',
     'assets/kxcraft-airship-fortress.jpg',
     'assets/kxcraft-hero-airship.jpg',
     'assets/kxcraft-island-workshop.jpg',
@@ -218,7 +222,7 @@ try {
 Assert ($manifest.schemaVersion -eq 1 -and $manifest.state -ceq 'PUBLISHED') 'Updater manifest is not PUBLISHED.'
 Assert ([string]$manifest.updaterVersion -match '^\d+\.\d+\.\d+$') 'Updater version is malformed.'
 Assert ([int]$manifest.sequence -ge 1) 'Updater sequence is invalid.'
-Assert ([string]$manifest.bundle.url -match '^https://raw\.githubusercontent\.com/Francho2002/kxcraft/[0-9a-f]{40}/distribution-v1/updater/releases/1\.0\.0/KxCraft-Updater\.zip$') 'Updater bundle URL is not pinned to a complete immutable Git commit.'
+Assert ([string]$manifest.bundle.url -match ('^https://raw\.githubusercontent\.com/Francho2002/kxcraft/[0-9a-f]{40}/distribution-v1/updater/releases/' + [regex]::Escape([string]$manifest.updaterVersion) + '/KxCraft-Updater\.zip$')) 'Updater bundle URL is not pinned to a complete immutable Git commit and its declared version.'
 Assert ([long]$manifest.bundle.length -gt 0 -and [string]$manifest.bundle.sha256 -match '^[0-9a-f]{64}$') 'Updater bundle integrity metadata is invalid.'
 Assert (@($manifest.files).Count -eq 2) 'Updater manifest must contain exactly two updater files.'
 foreach ($file in $manifest.files) { Assert ([string]$file.path -in @('KxCraft-Updater.ps1','KxCraft-ManagedFiles.ps1') -and [long]$file.length -gt 0 -and [string]$file.sha256 -match '^[0-9a-f]{64}$') 'Updater component pin is malformed.' }
