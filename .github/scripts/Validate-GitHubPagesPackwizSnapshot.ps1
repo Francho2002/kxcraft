@@ -284,7 +284,9 @@ Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bid="kxcraft-copy
 Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
 Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
 $visibleVersion = [regex]::Match($packagePanel,'(?is)<span\s+data-kx-package-version>(?<value>[^<]+)</span>')
-Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersion.Groups['value'].Value) -ceq $packageVersion) 'Visible package version differs from release.json.'
+Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersion.Groups['value'].Value) -ceq [string]$primary.Version) 'Visible package version must show the base Packwiz version.'
+Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must contain exactly three instructions.'
+Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
 Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[regex]::Escape($packageHash)+'</code>').Count -eq 1) 'Visible package SHA-256 differs from release.json.'
 foreach ($instruction in @('Abrí PrismLauncher.','Add Instance → Importar','Archivo local o enlace de descarga directa','Pulsá OK e iniciá la instancia.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
 Assert ($html -match 'PrismLauncher-Cracked/releases/download/11\.1\.1/PrismLauncher-Windows-MinGW-w64-Setup-11\.1\.1\.exe') 'The PrismLauncher download in step 01 is missing.'
