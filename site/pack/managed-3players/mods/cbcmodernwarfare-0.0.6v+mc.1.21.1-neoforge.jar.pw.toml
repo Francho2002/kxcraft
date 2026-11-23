@@ -1,8 +1,0 @@
-name = "CBC Neo Warfare"
-filename = "cbcmodernwarfare-0.0.6v+mc.1.21.1-neoforge.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/8232/556/cbcmodernwarfare-0.0.6v%2bmc.1.21.1-neoforge.jar"
-hash-format = "sha256"
-hash = "f8bbfcb4766f08a88c773a60aa154c4eb9704f974266e00f00569c765667a348"

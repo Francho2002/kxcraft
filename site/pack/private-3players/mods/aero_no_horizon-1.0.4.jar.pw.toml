@@ -1,8 +1,0 @@
-name = "Aeronautics No Horizon"
-filename = "aero_no_horizon-1.0.4.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/8771/761/aero_no_horizon-1.0.4.jar"
-hash-format = "sha256"
-hash = "8e92cb3c84186134b5579369360dbf010abda8fedf82a9410c5e237c612760cc"

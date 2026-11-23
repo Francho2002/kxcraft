@@ -1,8 +1,0 @@
-name = "Vista"
-filename = "vista-1.21.1-5.6.0-neoforge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/zuARv1N7/versions/ARuNbsj7/vista-1.21.1-5.6.0-neoforge.jar"
-hash-format = "sha256"
-hash = "a1015949e1b86b393a6793d8130e9aa4a326c10c4460d6b53b354dca7a679d9b"

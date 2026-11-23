@@ -1,8 +1,0 @@
-name = "Create: The Factory Must Grow"
-filename = "tfmg-1.21.1-1.2.4b-community.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/hC1xYvnS/versions/avOMXN07/tfmg-1.21.1-1.2.4b-community.jar"
-hash-format = "sha256"
-hash = "01a20a35db0106affcd2aaa318728e1bd1ccedf539788bddc0be7387c10f741a"

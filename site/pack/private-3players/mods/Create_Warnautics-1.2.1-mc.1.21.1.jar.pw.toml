@@ -1,8 +1,0 @@
-name = "Create Warnautics"
-filename = "Create_Warnautics-1.2.1-mc.1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9641/137/Create_Warnautics-1.2.1-mc.1.21.1.jar"
-hash-format = "sha256"
-hash = "99534470a8fd5aaa6e5465c73746d44485d3a0d493186ea5c4daa3366b11de19"

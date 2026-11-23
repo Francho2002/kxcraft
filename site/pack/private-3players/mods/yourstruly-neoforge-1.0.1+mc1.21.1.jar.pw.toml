@@ -1,8 +1,0 @@
-name = "Yours Truly"
-filename = "yourstruly-neoforge-1.0.1+mc1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/IaNRtr0L/versions/ZS9vvlRX/yourstruly-neoforge-1.0.1%2Bmc1.21.1.jar"
-hash-format = "sha256"
-hash = "008d81c35c3fb438dd1b17ffc7d6c491c2f74e7827d30d361b42b6547fe6da55"

@@ -1,8 +1,0 @@
-name = "Create: Lights & Controls"
-filename = "create-lights-and-controls-1.21.1-2.2.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/pX72TnVK/versions/z4HjcNCx/create-lights-and-controls-1.21.1-2.2.1.jar"
-hash-format = "sha256"
-hash = "e5591711f709b68d053c8292b82fdaeff6f00a0d78f2651c843f3cf727fdfa0f"

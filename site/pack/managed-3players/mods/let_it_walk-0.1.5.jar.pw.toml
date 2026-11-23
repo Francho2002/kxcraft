@@ -1,8 +1,0 @@
-name = "Let it Walk!"
-filename = "let_it_walk-0.1.5.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9540/966/let_it_walk-0.1.5.jar"
-hash-format = "sha256"
-hash = "0abb45d5c2d30660dc10b3625d68d5245e03dbb1dece97b39c09d393b994d7fd"

@@ -1,8 +1,0 @@
-name = "KxCraft Project: Explosive Balance"
-filename = "projectexplosive-balance-addon-0.1.0-dev.jar"
-side = "client"
-
-[download]
-url = "https://raw.githubusercontent.com/Francho2002/kxcraft/5c6f0018e9fac6003ec0948d0fd6bf721982ed28/binaries/mods/projectexplosive-balance-addon-0.1.0-dev.jar"
-hash-format = "sha256"
-hash = "da90e3a9e019dddbde937663baedb60c499138294e61e9e69f88da8d25671fc7"

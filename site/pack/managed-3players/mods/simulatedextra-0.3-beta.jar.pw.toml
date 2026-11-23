@@ -1,8 +1,0 @@
-name = "Simulated Extra"
-filename = "simulatedextra-0.3-beta.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/L064RU4O/versions/HtKNrbWA/simulatedextra-0.3-beta.jar"
-hash-format = "sha256"
-hash = "afee4be3b8c19c64435cc1d6e56f791a6b0f086265fb62d752e75baf85f4839b"

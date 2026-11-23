@@ -1,8 +1,0 @@
-name = "KxCraft CustomNPCs MarkData Fix"
-filename = "kxcraft-customnpcs-markdata-fix-0.1.0-dev.jar"
-side = "client"
-
-[download]
-url = "https://raw.githubusercontent.com/Francho2002/kxcraft/ddd1b057b2ece3610c2173510cb694e350e5bd5a/binaries/mods/kxcraft-customnpcs-markdata-fix-0.1.0-dev.jar"
-hash-format = "sha256"
-hash = "788b72eec12a7c9efa48d56fe38456f4708f0daf8942ecca0456e65f1af7c2df"

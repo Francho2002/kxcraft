@@ -1,8 +1,0 @@
-name = "Steel armor blocks"
-filename = "s_a_b-1.4.3-neoforge-1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/VwYIUgbk/versions/BuGLo3zw/s_a_b-1.4.3-neoforge-1.21.1.jar"
-hash-format = "sha256"
-hash = "69f4682d136b29b284c971593d2171a8e5efc9abf9eff9b13b450a916f99a84e"

@@ -1,8 +1,0 @@
-name = "Portable Hole"
-filename = "PortableHole-v21.1.0-1.21.1-NeoForge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/jckrUoUe/versions/V6PVdKh9/PortableHole-v21.1.0-1.21.1-NeoForge.jar"
-hash-format = "sha256"
-hash = "f968b6cfab7eecd0882ecaacc2ecc3efb75f8a622aee954857e73685f473016f"

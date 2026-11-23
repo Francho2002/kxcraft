@@ -1,8 +1,0 @@
-name = "SuperMartijn642's Core Lib"
-filename = "supermartijn642corelib-1.1.26-neoforge-mc1.21.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/rOUBggPv/versions/HGyYs7Z4/supermartijn642corelib-1.1.26-neoforge-mc1.21.jar"
-hash-format = "sha256"
-hash = "cc84edb181251ac3db45239557198ba2229332e1f9d204c651ea80c83c5e3e22"

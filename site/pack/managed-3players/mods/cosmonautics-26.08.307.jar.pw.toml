@@ -1,8 +1,0 @@
-name = "Create: Cosmonautics"
-filename = "cosmonautics-26.08.307.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/micg1iTH/versions/HuCMavv8/cosmonautics-26.08.307.jar"
-hash-format = "sha256"
-hash = "3fd9dac868400905a55164d2c9d74abc2080ae3269ca51e54e1899874945973e"

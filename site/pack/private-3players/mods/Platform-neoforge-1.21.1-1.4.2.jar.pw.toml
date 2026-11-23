@@ -1,8 +1,0 @@
-name = "Platform"
-filename = "Platform-neoforge-1.21.1-1.4.2.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/i6fiqm5y/versions/rh4p4ixM/Platform-neoforge-1.21.1-1.4.2.jar"
-hash-format = "sha256"
-hash = "56f63d73614e35841f6f8ac79d2eb2f7d8b9ff6414272eecac19274644c849ac"

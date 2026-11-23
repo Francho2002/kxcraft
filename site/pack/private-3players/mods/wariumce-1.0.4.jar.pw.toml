@@ -1,8 +1,0 @@
-name = "WariumCE"
-filename = "wariumce-1.0.4.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9125/356/wariumce-1.0.4.jar"
-hash-format = "sha256"
-hash = "aa0dd2fa8b5c8c2b4fff40b4fe2189d94bc9d07240f43a5e6af95d109b39e27e"

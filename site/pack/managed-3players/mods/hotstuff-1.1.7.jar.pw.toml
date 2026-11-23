@@ -1,8 +1,0 @@
-name = "Hot's Aerostuff"
-filename = "hotstuff-1.1.7.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/UFCtLrRv/versions/p1qiZ6zk/hotstuff-1.1.7.jar"
-hash-format = "sha256"
-hash = "697b0cb0f6d73436643cdc60bbe1648f7254f3612e9de85b568eeb37f50c8170"

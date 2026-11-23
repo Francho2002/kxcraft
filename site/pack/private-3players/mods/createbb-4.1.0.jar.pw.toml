@@ -1,8 +1,0 @@
-name = "Create: Broken Bad"
-filename = "createbb-4.1.0.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9086/287/createbb-4.1.0.jar"
-hash-format = "sha256"
-hash = "629578487f05dc669415271d6fa4d183b50b211657acffc8be3b2f8635382a59"

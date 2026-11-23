@@ -1,8 +1,0 @@
-name = "Create: Structures"
-filename = "create-structures-neoforge-1.21.1-1.0.0.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/GUjmOTOL/versions/9VT7B0NX/createstructures-neoforge-1.21.1-1.0.0.jar"
-hash-format = "sha256"
-hash = "bf0cc84736aad847ed018d4ebfb5f3918f8092898c660206c1c68603b7b58162"

@@ -1,0 +1,8 @@
+name = "SecurityCraft"
+filename = "[1.21.1] SecurityCraft v1.10.2.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/v8jzRtAt/versions/X9nq0PvS/%5B1.21.1%5D%20SecurityCraft%20v1.10.2.1.jar"
+hash-format = "sha256"
+hash = "75ac9e73c60caf58df7069f167dbacc00a640e1418207dff654f56a5fdb5f229"

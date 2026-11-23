@@ -1,8 +1,0 @@
-name = "Create: Better Targeting"
-filename = "create-better-targeting-1.0.0.1.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/9291/550/Create-Better-Targeting-1.0.0.1.jar"
-hash-format = "sha256"
-hash = "d31dcb676ade66d47f8165001de339df195c9bb5b8e8a31877a246a91f70ef55"

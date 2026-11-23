@@ -1,8 +1,0 @@
-name = "AmbientSounds"
-filename = "AmbientSounds_NEOFORGE_v6.3.11_mc1.21.1.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/fM515JnW/versions/WGalCQAo/AmbientSounds_NEOFORGE_v6.3.11_mc1.21.1.jar"
-hash-format = "sha256"
-hash = "72f57a9ba621f18994a17c5882f2d7fa34d27fa3614c1073d49bd3deda61b8d8"

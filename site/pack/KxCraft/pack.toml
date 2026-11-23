@@ -1,6 +1,6 @@
 name = "KxCraft"
 author = "KxCraft"
-version = "1.0.11"
+version = "1.0.12"
 pack-format = "packwiz:1.1.0"
 
 [versions]
@@ -10,4 +10,4 @@ neoforge = "21.1.265"
 [index]
 file = "index.toml"
 hash-format = "sha256"
-hash = "09224f359da1affdda7c7ce142ecab22989014bb6037c180aee880cb09edc275"
+hash = "4ce5bcecd1a367ab43061c12477b5b4e200e39cba6ae913a9a6efe245291ec95"

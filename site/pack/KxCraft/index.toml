@@ -1,6 +1,11 @@
 hash-format = "sha256"
 
 [[files]]
+file = "mods/[1.21.1] SecurityCraft v1.10.2.1.jar.pw.toml"
+hash = "68a2be840372ce621b4fb649db378d3c525144911b94476f8f55163b12718eff"
+metafile = true
+
+[[files]]
 file = "mods/aero_cam_sync-1.4.0.jar.pw.toml"
 hash = "fd45bb665b86eef8f680955f7a61d75b9809a56072ce3a12d1d4afc4d2433421"
 metafile = true
@@ -332,7 +337,7 @@ metafile = true
 
 [[files]]
 file = "mods/create-military-integration-0.1.0-dev.jar.pw.toml"
-hash = "b4d2d6545945c98c006b35dde349411873a8e65aabafe031510de6006aa91c4f"
+hash = "4b4f624a0feeabd4bfc87d56e3a84f2767aefcb52f2a58f308800a48e8f24c3a"
 metafile = true
 
 [[files]]
@@ -413,6 +418,11 @@ metafile = true
 [[files]]
 file = "mods/createframed-1.21.1-1.8.2.jar.pw.toml"
 hash = "87386ce82bdfcfabc2c8577966ffacbd54343e030cfe33022a7b8df660497172"
+metafile = true
+
+[[files]]
+file = "mods/CreateNumismatics-1.1.0+neoforge-mc1.21.1.jar.pw.toml"
+hash = "d269488e505db51dc3e10d31fda60a0e849696a811573140be9fa66b67944a5e"
 metafile = true
 
 [[files]]

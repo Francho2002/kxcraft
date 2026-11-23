@@ -1,8 +1,0 @@
-name = "Ragdoll Reactions"
-filename = "ragdoll_reactions-1.21.1-0.8.0.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/6awFMFjR/versions/ITBE1E6c/ragdoll_reactions-1.21.1-0.8.0.jar"
-hash-format = "sha256"
-hash = "aeaaa51c368e7a41589e329762ea87c4f8db258e314c847b84b185b08c285ab3"

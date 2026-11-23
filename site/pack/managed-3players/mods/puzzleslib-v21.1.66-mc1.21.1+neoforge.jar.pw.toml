@@ -1,8 +1,0 @@
-name = "Puzzles Lib"
-filename = "puzzleslib-v21.1.66-mc1.21.1+neoforge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/QAGBst4M/versions/kmN5PWk9/puzzleslib-v21.1.66-mc1.21.1%2Bneoforge.jar"
-hash-format = "sha256"
-hash = "cb02de7e1d4a133746ec7b43a64eddc2cb621122cdc49e134a15272f456c31f2"

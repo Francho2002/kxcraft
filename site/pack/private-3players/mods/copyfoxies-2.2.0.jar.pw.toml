@@ -1,8 +1,0 @@
-name = "Copyfoxies"
-filename = "copyfoxies-2.2.0.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/VmFTbxHn/versions/nP2BFPyv/copyfoxies-2.2.0.jar"
-hash-format = "sha256"
-hash = "82d679a7a30690f8446c503f8507fe2db88896c661547a8323b67c3efd55ae76"

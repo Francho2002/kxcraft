@@ -1,8 +1,0 @@
-name = "Create Compact Transmission"
-filename = "create_compact_transmission-1.0.7.jar"
-side = "client"
-
-[download]
-url = "https://edge.forgecdn.net/files/8243/511/create_compact_transmission-1.0.7.jar"
-hash-format = "sha256"
-hash = "18703f8bb8486bbb9740e0c989d69e844a0e58b7e2dd7b912f7cdf9083bfd0a5"
