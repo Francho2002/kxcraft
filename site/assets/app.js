@@ -2,21 +2,30 @@
   "use strict";
 
   const input = document.getElementById("kxcraft-import-url");
-  const button = document.getElementById("kxcraft-copy-link");
   const status = document.getElementById("kxcraft-copy-status");
-  if (!input || !button || !status) return;
+  if (!input || !status) return;
 
-  button.addEventListener("click", async () => {
+  async function copyImportUrl() {
     try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        throw new Error("Clipboard API unavailable");
+      }
       await navigator.clipboard.writeText(input.value);
       status.textContent = "¡Enlace copiado!";
-      status.hidden = false;
     } catch {
       input.focus();
       input.select();
       if (typeof input.setSelectionRange === "function") input.setSelectionRange(0, input.value.length);
       status.textContent = "No se pudo copiar automáticamente. La URL quedó seleccionada; copiala manualmente.";
-      status.hidden = false;
+    }
+    status.hidden = false;
+  }
+
+  input.addEventListener("click", () => { void copyImportUrl(); });
+  input.addEventListener("keydown", (event) => {
+    if ((event.key === "Enter" || event.key === " " || event.code === "Space") && !event.repeat) {
+      event.preventDefault();
+      void copyImportUrl();
     }
   });
 })();

@@ -53,19 +53,20 @@
             </div>
           </article>
           <article class="kx-play-panel kx-play-panel--pack">
-            <div class="kx-panel-top"><span>PASO 02</span><span aria-hidden="true">✦</span></div>
+            <div class="kx-panel-top">
+              <span>PASO 02</span>
+              <span class="kx-panel-update-note">El modpack se actualizará automáticamente al iniciar el juego.<span aria-hidden="true">✦</span></span>
+            </div>
             <h2>Importá KxCraft en PrismLauncher</h2>
             <ol class="kx-setup-list">
               <li><span>1</span><p>Abrí PrismLauncher.</p></li>
               <li><span>2</span><p>Seleccioná <code>Add Instance → Importar</code>.</p></li>
-              <li><span>3</span><p>Copiá el enlace de KxCraft de esta página y pegalo en «Archivo local o enlace de descarga directa». Pulsá OK e iniciá la instancia.</p></li>
+              <li><span>3</span><p>Pegá el enlace que está debajo y pulsá OK.</p></li>
             </ol>
-            <p class="kx-auto-update-note">Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego.</p>
             <div class="kx-pack-downloads" aria-label="Enlace de importación de KxCraft">
               <label class="kx-import-label" for="kxcraft-import-url">Enlace directo para importar</label>
               <div class="kx-import-link">
-                <input id="kxcraft-import-url" type="url" value="https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip" readonly aria-describedby="kxcraft-copy-status">
-                <button class="kx-panel-button" id="kxcraft-copy-link" type="button"><span>Copiar enlace de KxCraft</span><span aria-hidden="true">⧉</span></button>
+                <input id="kxcraft-import-url" type="url" value="https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip" readonly aria-label="Enlace de importación de KxCraft; Enter o Espacio para copiar" aria-describedby="kxcraft-copy-status">
               </div>
               <p class="kx-copy-status" id="kxcraft-copy-status" role="status" aria-live="polite" hidden></p>
             </div>

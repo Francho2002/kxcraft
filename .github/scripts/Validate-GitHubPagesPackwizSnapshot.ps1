@@ -280,7 +280,7 @@ Assert ([string]$packageGate.packageFileName -ceq 'KxCraft.zip' -and [long]$pack
 Assert ($packageVersion -match ('^'+[regex]::Escape([string]$primary.Version)+'(?: · Hotfix [0-9]+)?$')) 'The KxCraft ZIP package version does not match the Packwiz version.'
 Assert ($packageUrl -match ('^https://github\.com/Francho2002/kxcraft/releases/download/kxc-'+[regex]::Escape([string]$primary.Version)+'-(?:final|hotfix[0-9]+)/KxCraft\.zip$')) 'The KxCraft ZIP metadata must point to an immutable versioned release asset.'
 Assert ([regex]::Matches($packagePanel,'(?is)<input\b(?=[^>]*\bid="kxcraft-import-url")(?=[^>]*\btype="url")(?=[^>]*\bvalue="'+[regex]::Escape($latestImportUrl)+'")(?=[^>]*\breadonly\b)[^>]*>').Count -eq 1) 'The page must show the exact read-only latest ZIP URL for Prism import.'
-Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bid="kxcraft-copy-link")(?=[^>]*\btype="button")[^>]*>\s*<span>Copiar enlace de KxCraft</span>').Count -eq 1) 'The page must show exactly one Copy KxCraft link button.'
+Assert ($packagePanel -notmatch '(?is)<button\b') 'The import panel must not contain a separate copy button.'
 Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
 Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
 $visibleVersion = [regex]::Match($packagePanel,'(?is)<span\s+data-kx-package-version>(?<value>[^<]+)</span>')
@@ -288,10 +288,14 @@ Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersio
 Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must contain exactly three instructions.'
 Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
 Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[regex]::Escape($packageHash)+'</code>').Count -eq 1) 'Visible package SHA-256 differs from release.json.'
-foreach ($instruction in @('Abrí PrismLauncher.','Add Instance → Importar','Archivo local o enlace de descarga directa','Pulsá OK e iniciá la instancia.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
+foreach ($instruction in @('Abrí PrismLauncher.','Add Instance → Importar','Pegá el enlace que está debajo y pulsá OK.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
+Assert ([regex]::Matches($packagePanel,'(?is)<span class="kx-panel-update-note">El modpack se actualizará automáticamente al iniciar el juego\.<span aria-hidden="true">✦</span></span>').Count -eq 1) 'The auto-update notice must sit beside the step 02 star.'
+Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The standalone auto-update paragraph must be removed.'
+$appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
+Assert ($appJs.Contains('input.addEventListener("click"') -and $appJs.Contains('event.key === "Enter"') -and $appJs.Contains('event.code === "Space"')) 'The URL field must copy on click, Enter and Space.'
+Assert ($appJs.Contains('navigator.clipboard.writeText(input.value)') -and $appJs.Contains('input.select()') -and $appJs.Contains('¡Enlace copiado!')) 'URL clipboard copy and manual selection fallback are required.'
 Assert ($html -match 'PrismLauncher-Cracked/releases/download/11\.1\.1/PrismLauncher-Windows-MinGW-w64-Setup-11\.1\.1\.exe') 'The PrismLauncher download in step 01 is missing.'
 Assert ($html -notmatch 'Descargá KxCraft\.zip e importalo|Descargar KxCraft\.zip') 'The old manual KxCraft ZIP download flow remains.'
 Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
-Assert ($packagePanel -match 'Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
 
-Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); signed Updater, package version/hash, latest import URL, copy button and no manual download checks passed.")
+Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); signed Updater, package version/hash, latest import URL, clickable keyboard-accessible URL and no manual download checks passed.")

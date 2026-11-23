@@ -730,7 +730,7 @@ kbd {
 
 .kx-play-panels {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
   gap: 18px;
 }
 
@@ -757,6 +757,26 @@ kbd {
 }
 
 .kx-panel-top > span[aria-hidden="true"] {
+  color: var(--kx-soft);
+}
+
+.kx-panel-update-note {
+  display: flex;
+  min-width: 0;
+  max-width: min(66%, 420px);
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--kx-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.kx-panel-update-note > span[aria-hidden="true"] {
+  flex: none;
   color: var(--kx-soft);
 }
 
@@ -925,20 +945,12 @@ kbd {
   color: var(--kx-text);
   background: rgba(10, 13, 11, .62);
   font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  cursor: pointer;
 }
 
 .kx-import-link input:focus-visible {
   outline: 2px solid var(--kx-gold);
   outline-offset: 2px;
-}
-
-.kx-import-link .kx-panel-button {
-  min-width: 205px;
-  min-height: 44px;
-  margin: 0;
-  border: 0;
-  font-family: inherit;
-  cursor: pointer;
 }
 
 .kx-copy-status {
@@ -1053,6 +1065,10 @@ kbd {
     gap: 11px;
   }
 
+  .kx-panel-update-note {
+    max-width: 72%;
+  }
+
   .kx-play-panel {
     padding: 21px 17px;
   }
@@ -1070,11 +1086,6 @@ kbd {
     grid-template-columns: 1fr;
   }
 
-  .kx-import-link .kx-panel-button {
-    min-width: 0;
-    width: 100%;
-    max-width: 280px;
-  }
 }
 
 
