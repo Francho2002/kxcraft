@@ -1,5 +1,4 @@
-# KxCraft Pages release gate. Validates the signed Packwiz channel and its
-# permanent public and legacy URL aliases. Never remove an alias: installed launchers pin these paths.
+# KxCraft Pages release gate for the temporary seq3 bridge and permanent seq4 channel.
 [CmdletBinding()]
 param(
     [string]$SiteRoot = 'site',
@@ -10,7 +9,22 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $root = [IO.Path]::GetFullPath($SiteRoot)
-$channels = @('managed-3players', 'KxCraft', 'private-3players')
+$preManifestPath = Join-Path $root 'updater\manifest.json'
+if (!(Test-Path -LiteralPath $preManifestPath -PathType Leaf)) { throw 'Updater manifest is missing.' }
+$preManifest = Get-Content -LiteralPath $preManifestPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+$preChannelNames = @($preManifest.channels.PSObject.Properties | ForEach-Object { $_.Name })
+if ($preManifest.schemaVersion -ne 1 -or $preManifest.state -cne 'PUBLISHED') { throw 'Only a PUBLISHED updater manifest can be deployed.' }
+if ([int]$preManifest.sequence -eq 3 -and $preChannelNames.Count -eq 1 -and $preChannelNames[0] -ceq 'managed-3players') {
+    $deploymentPhase = 'Bridge'
+    $channels = @('managed-3players', 'KxCraft', 'private-3players')
+    $primaryChannel = 'managed-3players'
+} elseif ([int]$preManifest.sequence -eq 4 -and $preChannelNames.Count -eq 1 -and $preChannelNames[0] -ceq 'KxCraft') {
+    $deploymentPhase = 'Final'
+    $channels = @('KxCraft')
+    $primaryChannel = 'KxCraft'
+} else {
+    throw 'Pages accepts only the approved seq3 compatibility bridge or seq4 KxCraft-only release.'
+}
 $publicWebFiles = @(
     'index.html',
     'mods.html',
@@ -203,15 +217,19 @@ foreach ($path in $actual) {
 
 $channelResults = @{}
 foreach ($channel in $channels) { $channelResults[$channel] = Test-PackChannel $channel $expected }
-$managed = $channelResults['managed-3players']
-foreach ($alias in @('KxCraft', 'private-3players')) {
-    $aliasResult = $channelResults[$alias]
-    Assert ($aliasResult.Version -ceq $managed.Version -and $aliasResult.Mods -eq $managed.Mods -and $aliasResult.Entries -eq $managed.Entries) "Permanent URL alias $alias is out of sync with the managed Packwiz channel."
-    $managedIndexHash = Get-Sha256 (Join-Path $root 'pack\managed-3players\index.toml')
-    $aliasIndexHash = Get-Sha256 (Join-Path $root ("pack\{0}\index.toml" -f $alias))
-    Assert ($aliasIndexHash -ceq $managedIndexHash) "Permanent URL alias $alias does not serve the same mod inventory."
+$primary = $channelResults[$primaryChannel]
+if ($deploymentPhase -eq 'Bridge') {
+    foreach ($alias in @('KxCraft', 'private-3players')) {
+        $aliasResult = $channelResults[$alias]
+        Assert ($aliasResult.Version -ceq $primary.Version -and $aliasResult.Mods -eq $primary.Mods -and $aliasResult.Entries -eq $primary.Entries) "Temporary bridge alias $alias is out of sync with the seq3 Packwiz snapshot."
+        $primaryIndexHash = Get-Sha256 (Join-Path $root 'pack\managed-3players\index.toml')
+        $aliasIndexHash = Get-Sha256 (Join-Path $root ("pack\{0}\index.toml" -f $alias))
+        Assert ($aliasIndexHash -ceq $primaryIndexHash) "Temporary bridge alias $alias does not match the seq3 Packwiz index."
+    }
+    Assert ($primary.Version -ceq '1.0.11' -and $primary.Mods -eq 199) 'The seq3 bridge must preserve the verified 1.0.11/199 snapshot.'
+} else {
+    Assert ($primary.Version -ceq '1.0.12' -and $primary.Mods -eq 201) 'The final channel must be KxCraft 1.0.12/201.'
 }
-
 $manifestPath = Join-Path $root 'updater\manifest.json'
 $signaturePath = Join-Path $root 'updater\manifest.sig'
 $publicKeyPath = Join-Path $PSScriptRoot 'kxcraft-updater-public-key.spki.base64'
@@ -234,12 +252,14 @@ Assert ([string]$manifest.bundle.url -match ('^https://raw\.githubusercontent\.c
 Assert ([long]$manifest.bundle.length -gt 0 -and [string]$manifest.bundle.sha256 -match '^[0-9a-f]{64}$') 'Updater bundle integrity metadata is invalid.'
 Assert (@($manifest.files).Count -eq 2) 'Updater manifest must contain exactly two updater files.'
 foreach ($file in $manifest.files) { Assert ([string]$file.path -in @('KxCraft-Updater.ps1','KxCraft-ManagedFiles.ps1') -and [long]$file.length -gt 0 -and [string]$file.sha256 -match '^[0-9a-f]{64}$') 'Updater component pin is malformed.' }
-$signedChannel = $manifest.channels.'managed-3players'
-if ($AllowCandidate -and [string]$managed.Gate.state -ceq 'CANDIDATE') {
-    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -match '^\d+\.\d+\.\d+$' -and [string]$signedChannel.packTomlUrl -ceq [string]$managed.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -match '^[0-9a-f]{64}$' -and [int]$signedChannel.modCount -gt 0) 'The signed updater manifest does not pin a valid prior published channel for this candidate.'
-    Assert ([version][string]$signedChannel.packVersion -lt [version][string]$managed.Version) 'A candidate must advance beyond the still-published signed Packwiz version.'
+$manifestChannelNames = @($manifest.channels.PSObject.Properties | ForEach-Object { $_.Name })
+Assert ($manifestChannelNames.Count -eq 1 -and $manifestChannelNames[0] -ceq $primaryChannel) 'Updater manifest contains an unexpected channel.'
+$signedChannel = $manifest.channels.PSObject.Properties[$primaryChannel].Value
+if ($AllowCandidate -and [string]$primary.Gate.state -ceq 'CANDIDATE') {
+    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -match '^\d+\.\d+\.\d+$' -and [string]$signedChannel.packTomlUrl -ceq [string]$primary.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -match '^[0-9a-f]{64}$' -and [int]$signedChannel.modCount -gt 0) 'The signed updater manifest does not pin a valid prior published channel for this candidate.'
+    Assert ([version][string]$signedChannel.packVersion -lt [version][string]$primary.Version) 'A candidate must advance beyond the still-published signed Packwiz version.'
 } else {
-    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $managed.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$managed.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$managed.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $managed.Mods) 'Updater signature does not pin the exact published managed Packwiz channel.'
+    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $primary.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$primary.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$primary.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $primary.Mods) 'Updater signature does not pin the exact published managed Packwiz channel.'
 }
 $expected['updater/manifest.json'] = $true
 $expected['updater/manifest.sig'] = $true
@@ -251,10 +271,10 @@ $html = [IO.File]::ReadAllText((Join-Path $root 'index.html'))
 $baselinePackagePanels = [regex]::Matches($html,'(?is)<article\b(?=[^>]*\bkx-play-panel--pack\b)[^>]*>.*?</article>')
 Assert ($baselinePackagePanels.Count -eq 1) 'The public page must contain exactly one KxCraft package panel.'
 $baselinePackagePanel = $baselinePackagePanels[0].Value
-Assert ([regex]::Matches($baselinePackagePanel,[regex]::Escape('https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.11/KxCraft.zip')).Count -eq 1) 'The KxCraft package link must match the immutable baseline URL.'
-Assert ([regex]::Matches($baselinePackagePanel,'(?i)SHA-256\s*<code>dc052893e0dab98d145ade26f86d8cbd92a9a534bedae50bf309b32638e546a1</code>').Count -eq 1) 'The KxCraft package hash must match the immutable baseline SHA-256.'
+Assert ([regex]::Matches($baselinePackagePanel,[regex]::Escape('https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.12-final/KxCraft.zip')).Count -eq 1) 'The KxCraft package link must match the immutable baseline URL.'
+Assert ([regex]::Matches($baselinePackagePanel,'(?i)SHA-256\s*<code>1e0ca1a7211acbba494fe225c6834a16cd86dcba4adbc898c6a95c6d873d01db</code>').Count -eq 1) 'The KxCraft package hash must match the immutable baseline SHA-256.'
 Assert (([regex]::Matches($html,'(?i)Descargar KxCraft')).Count -eq 1) 'The page must contain exactly one KxCraft download control.'
 Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
 Assert ($html -match 'Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
 
-Write-Output ("PASS: Pages allowlist; stable KxCraft URL and permanent managed/private compatibility aliases=$($managed.Version)/$($managed.Mods); index entries=$($managed.Entries); RSA signature, immutable Updater pin, single KxCraft.zip link, retired-option exclusion and SHA-256 checks passed.")
+Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); RSA signature, immutable Updater pin, single KxCraft.zip link and SHA-256 checks passed.")

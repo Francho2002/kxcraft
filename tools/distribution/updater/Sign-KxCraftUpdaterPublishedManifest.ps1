@@ -24,8 +24,8 @@ if ([string]::IsNullOrWhiteSpace($CandidateRoot)) {
 $CandidateRoot = [IO.Path]::GetFullPath($CandidateRoot)
 if ([string]::IsNullOrWhiteSpace($ManifestPath)) { $ManifestPath = Join-Path $CandidateRoot 'site\updater\manifest.json' }
 if ([string]::IsNullOrWhiteSpace($SignaturePath)) { $SignaturePath = $ManifestPath -replace '\.json$','.sig' }
-if ([string]::IsNullOrWhiteSpace($PackRoot)) { $PackRoot = Join-Path $CandidateRoot 'site\pack\managed-3players' }
-if ([string]::IsNullOrWhiteSpace($BundlePath)) { $BundlePath = Join-Path $CandidateRoot 'binaries\distribution-v1\updater\releases\1.0.0\KxCraft-Updater.zip' }
+if ([string]::IsNullOrWhiteSpace($PackRoot)) { $PackRoot = Join-Path $CandidateRoot 'site\pack\KxCraft' }
+if ([string]::IsNullOrWhiteSpace($BundlePath)) { $BundlePath = Join-Path $CandidateRoot 'binaries\distribution-v1\updater\releases\1.0.2\KxCraft-Updater.zip' }
 if ([string]::IsNullOrWhiteSpace($UpdaterPath)) { $UpdaterPath = Join-Path $projectRoot 'tools\distribution\updater\KxCraft-Updater.ps1' }
 if ([string]::IsNullOrWhiteSpace($ManagedFilesPath)) { $ManagedFilesPath = Join-Path $projectRoot 'tools\packwiz\KxCraft-ManagedFiles.ps1' }
 if ([string]::IsNullOrWhiteSpace($PublicKeyPath)) { $PublicKeyPath = Join-Path $projectRoot 'tools\distribution\updater\public-key.csp.base64' }
@@ -42,7 +42,7 @@ function Test-KxSha256([string]$Value) { return $Value -match '^[0-9a-f]{64}$' }
 $manifestBytes = [IO.File]::ReadAllBytes([IO.Path]::GetFullPath($ManifestPath))
 $manifest = [Text.UTF8Encoding]::new($false,$true).GetString($manifestBytes) | ConvertFrom-Json -ErrorAction Stop
 if ($manifest.schemaVersion -ne 1 -or [string]$manifest.state -cne 'PUBLISHED') { throw 'Published-manifest signer accepts only schema-v1 PUBLISHED manifests.' }
-if ([int]$manifest.sequence -lt 1 -or [string]$manifest.updaterVersion -notmatch '^\d+\.\d+\.\d+$' -or [string]$manifest.minimumBootstrapVersion -cne '1.0.0') { throw 'Updater release version or sequence is invalid.' }
+if ([int]$manifest.sequence -ne 4 -or [string]$manifest.updaterVersion -cne '1.0.2' -or [string]$manifest.minimumBootstrapVersion -cne '1.0.0') { throw 'Updater release version or sequence is invalid.' }
 
 $bundleUri = [Uri]([string]$manifest.bundle.url)
 if ($bundleUri.Scheme -cne 'https' -or $bundleUri.Host -cne 'raw.githubusercontent.com' -or
@@ -77,25 +77,27 @@ $indexText = [IO.File]::ReadAllText($indexPath)
 $indexEntryCount = [regex]::Matches($indexText,'(?m)^\[\[files\]\]\s*$').Count
 if (!$indexHashMatch.Success -or $indexHashMatch.Groups[1].Value -cne $indexHash -or $indexEntryCount -ne [int]$packGate.modCount) { throw 'Packwiz index hash or entry count does not match release.json.' }
 if ($packGate.schemaVersion -ne 1 -or [string]$packGate.state -cne 'PUBLISHED' -or [string]$packGate.releaseVersion -notmatch '^\d+\.\d+\.\d+$' -or
-    [int]$packGate.modCount -lt 1 -or [int]$packGate.modCount -gt 512 -or [int]$packGate.indexEntryCount -ne [int]$packGate.modCount -or [string]$packGate.packTomlUrl -cne 'https://francho2002.github.io/kxcraft/pack/managed-3players/pack.toml' -or
+    [int]$packGate.modCount -lt 1 -or [int]$packGate.modCount -gt 512 -or [int]$packGate.indexEntryCount -ne [int]$packGate.modCount -or [string]$packGate.packTomlUrl -cne 'https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml' -or
     [string]$packGate.packTomlSha256 -cne $packHash) { throw 'Packwiz release gate is not a valid, hash-consistent published snapshot.' }
-$channel = $manifest.channels.'managed-3players'
+$manifestChannels = @($manifest.channels.PSObject.Properties | ForEach-Object { $_.Name })
+if ($manifestChannels.Count -ne 1 -or $manifestChannels[0] -cne 'KxCraft') { throw 'Published updater manifest must contain only the permanent KxCraft channel.' }
+$channel = $manifest.channels.'KxCraft'
 if ($null -eq $channel -or [string]$channel.packVersion -cne [string]$packGate.releaseVersion -or [string]$channel.packTomlUrl -cne [string]$packGate.packTomlUrl -or
     [string]$channel.packTomlSha256 -cne $packHash -or [int]$channel.modCount -ne [int]$packGate.modCount) { throw 'Signed updater manifest does not pin the published Packwiz release.' }
 
 $expectedFiles = @{
-    'KxCraft-Updater.ps1' = @{ path=[IO.Path]::GetFullPath($UpdaterPath); sha256=[string]$manifest.files[0].sha256 }
-    'KxCraft-ManagedFiles.ps1' = @{ path=[IO.Path]::GetFullPath($ManagedFilesPath); sha256=[string]$manifest.files[1].sha256 }
+    'KxCraft-Updater.ps1' = [IO.Path]::GetFullPath($UpdaterPath)
+    'KxCraft-ManagedFiles.ps1' = [IO.Path]::GetFullPath($ManagedFilesPath)
 }
 if (@($manifest.files).Count -ne 2) { throw 'Updater manifest must pin exactly two files.' }
 foreach ($entry in $manifest.files) {
     $name = [string]$entry.path
     if (!$expectedFiles.ContainsKey($name) -or !(Test-KxSha256 ([string]$entry.sha256))) { throw "Unexpected Updater component pin: $name" }
-    if ([long]$entry.length -ne (Get-Item -LiteralPath $expectedFiles[$name].path).Length -or (Get-KxFileSha256 $expectedFiles[$name].path) -cne [string]$entry.sha256) {
+    $componentPath = $expectedFiles[$name]
+    if ([long]$entry.length -ne (Get-Item -LiteralPath $componentPath).Length -or (Get-KxFileSha256 $componentPath) -cne [string]$entry.sha256) {
         throw "Updater component does not match the published pin: $name"
     }
 }
-
 $protectedPath = Join-Path $env:LOCALAPPDATA 'KxCraft\DistributionTrust\updater-signing-key.dpapi'
 if (!(Test-Path -LiteralPath $protectedPath -PathType Leaf)) { throw 'DPAPI-protected KxCraft signing key is unavailable for this Windows user.' }
 $entropy = [Text.Encoding]::UTF8.GetBytes('KxCraft Distribution V1 signing key, schema 1')
