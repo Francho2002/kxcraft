@@ -289,7 +289,8 @@ Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must 
 Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
 Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[regex]::Escape($packageHash)+'</code>').Count -eq 1) 'Visible package SHA-256 differs from release.json.'
 foreach ($instruction in @('Abrí PrismLauncher.','Add Instance → Importar','Pegá el enlace que está debajo y pulsá OK.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
-Assert ([regex]::Matches($packagePanel,'(?is)<span class="kx-panel-update-note">El modpack se actualizará automáticamente al iniciar el juego\.<span aria-hidden="true">✦</span></span>').Count -eq 1) 'The auto-update notice must sit beside the step 02 star.'
+Assert ([regex]::Matches($packagePanel,'(?is)<label\b[^>]*for="kxcraft-import-url">Enlace directo del modpack</label>').Count -eq 1) 'The import field label must identify the KxCraft modpack.'
+Assert ($packagePanel -notmatch '(?is)kx-panel-update-note|El modpack se actualizará automáticamente al iniciar el juego\.') 'The unwanted upper-corner auto-update notice must be removed.'
 Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The standalone auto-update paragraph must be removed.'
 $appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
 Assert ($appJs.Contains('input.addEventListener("click"') -and $appJs.Contains('event.key === "Enter"') -and $appJs.Contains('event.code === "Space"')) 'The URL field must copy on click, Enter and Space.'
