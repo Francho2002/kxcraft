@@ -96,7 +96,7 @@ function Get-Provider([string]$Url, [string]$Relative) {
     $decoded = [Uri]::UnescapeDataString($uri.AbsolutePath)
     switch -CaseSensitive ($uri.Host.ToLowerInvariant()) {
         'raw.githubusercontent.com' {
-            Assert ($decoded -match '^/Francho2002/kxcraft/[0-9a-f]{40}/binaries/mods/[^/]+\.jar$') "GitHub URL must pin a full KxCraft commit: $Relative"
+            Assert ($decoded -match '^/Francho2002/kxcraft/[0-9a-f]{40}/binaries/mods/(?:\d+\.\d+\.\d+/)?[^/]+\.jar$') "GitHub URL must pin a full KxCraft commit: $Relative"
             return 'github'
         }
         'cdn.modrinth.com' {
