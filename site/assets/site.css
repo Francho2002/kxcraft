@@ -882,7 +882,7 @@ kbd {
 
 .kx-pack-downloads {
   display: grid;
-  max-width: 520px;
+  max-width: 640px;
   gap: 8px;
   margin-top: 14px;
 }
