@@ -268,13 +268,28 @@ foreach ($path in $actual) { Assert $expected.ContainsKey($path) "Unexpected pub
 foreach ($path in $expected.Keys) { Assert ($actual -contains $path) "Expected public file is missing: $path" }
 
 $html = [IO.File]::ReadAllText((Join-Path $root 'index.html'))
-$baselinePackagePanels = [regex]::Matches($html,'(?is)<article\b(?=[^>]*\bkx-play-panel--pack\b)[^>]*>.*?</article>')
-Assert ($baselinePackagePanels.Count -eq 1) 'The public page must contain exactly one KxCraft package panel.'
-$baselinePackagePanel = $baselinePackagePanels[0].Value
-Assert ([regex]::Matches($baselinePackagePanel,[regex]::Escape('https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.12-final/KxCraft.zip')).Count -eq 1) 'The KxCraft package link must match the immutable baseline URL.'
-Assert ([regex]::Matches($baselinePackagePanel,'(?i)SHA-256\s*<code>1e0ca1a7211acbba494fe225c6834a16cd86dcba4adbc898c6a95c6d873d01db</code>').Count -eq 1) 'The KxCraft package hash must match the immutable baseline SHA-256.'
-Assert (([regex]::Matches($html,'(?i)Descargar KxCraft')).Count -eq 1) 'The page must contain exactly one KxCraft download control.'
+$packagePanels = [regex]::Matches($html,'(?is)<article\b(?=[^>]*\bkx-play-panel--pack\b)[^>]*>.*?</article>')
+Assert ($packagePanels.Count -eq 1) 'The public page must contain exactly one KxCraft package panel.'
+$packagePanel = $packagePanels[0].Value
+$packageGate = $primary.Gate
+$packageVersion = [string]$packageGate.packageVersion
+$packageHash = [string]$packageGate.packageSha256
+$packageUrl = [string]$packageGate.packageUrl
+$latestImportUrl = 'https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip'
+Assert ([string]$packageGate.packageFileName -ceq 'KxCraft.zip' -and [long]$packageGate.packageLength -gt 0 -and $packageHash -match '^[0-9a-f]{64}$') 'The KxCraft ZIP release metadata is incomplete.'
+Assert ($packageVersion -match ('^'+[regex]::Escape([string]$primary.Version)+'(?: · Hotfix [0-9]+)?$')) 'The KxCraft ZIP package version does not match the Packwiz version.'
+Assert ($packageUrl -match ('^https://github\.com/Francho2002/kxcraft/releases/download/kxc-'+[regex]::Escape([string]$primary.Version)+'-(?:final|hotfix[0-9]+)/KxCraft\.zip$')) 'The KxCraft ZIP metadata must point to an immutable versioned release asset.'
+Assert ([regex]::Matches($packagePanel,'(?is)<input\b(?=[^>]*\bid="kxcraft-import-url")(?=[^>]*\btype="url")(?=[^>]*\bvalue="'+[regex]::Escape($latestImportUrl)+'")(?=[^>]*\breadonly\b)[^>]*>').Count -eq 1) 'The page must show the exact read-only latest ZIP URL for Prism import.'
+Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bid="kxcraft-copy-link")(?=[^>]*\btype="button")[^>]*>\s*<span>Copiar enlace de KxCraft</span>').Count -eq 1) 'The page must show exactly one Copy KxCraft link button.'
+Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
+Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
+$visibleVersion = [regex]::Match($packagePanel,'(?is)<span\s+data-kx-package-version>(?<value>[^<]+)</span>')
+Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersion.Groups['value'].Value) -ceq $packageVersion) 'Visible package version differs from release.json.'
+Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[regex]::Escape($packageHash)+'</code>').Count -eq 1) 'Visible package SHA-256 differs from release.json.'
+foreach ($instruction in @('Abrí PrismLauncher.','Add Instance → Importar','Archivo local o enlace de descarga directa','Pulsá OK e iniciá la instancia.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
+Assert ($html -match 'PrismLauncher-Cracked/releases/download/11\.1\.1/PrismLauncher-Windows-MinGW-w64-Setup-11\.1\.1\.exe') 'The PrismLauncher download in step 01 is missing.'
+Assert ($html -notmatch 'Descargá KxCraft\.zip e importalo|Descargar KxCraft\.zip') 'The old manual KxCraft ZIP download flow remains.'
 Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
-Assert ($html -match 'Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
+Assert ($packagePanel -match 'Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
 
-Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); RSA signature, immutable Updater pin, single KxCraft.zip link and SHA-256 checks passed.")
+Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); signed Updater, package version/hash, latest import URL, copy button and no manual download checks passed.")

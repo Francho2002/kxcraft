@@ -54,18 +54,25 @@
           </article>
           <article class="kx-play-panel kx-play-panel--pack">
             <div class="kx-panel-top"><span>PASO 02</span><span aria-hidden="true">✦</span></div>
-            <h2>Prepará tu instancia.</h2>
+            <h2>Importá KxCraft en PrismLauncher</h2>
             <ol class="kx-setup-list">
-              <li><span>1</span><p>Instalá PrismLauncher-Cracked y creá tu perfil offline.</p></li>
-              <li><span>2</span><p>Descargá KxCraft.zip e importalo en PrismLauncher.</p></li>
-              <li><span>3</span><p>Iniciá la instancia. Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego.</p></li>
+              <li><span>1</span><p>Abrí PrismLauncher.</p></li>
+              <li><span>2</span><p>Seleccioná <code>Add Instance → Importar</code>.</p></li>
+              <li><span>3</span><p>Copiá el enlace de KxCraft de esta página y pegalo en «Archivo local o enlace de descarga directa».</p></li>
+              <li><span>4</span><p>Pulsá OK e iniciá la instancia.</p></li>
             </ol>
-            <div class="kx-pack-downloads" aria-label="Descarga de KxCraft">
-              <a class="kx-panel-button" href="https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.12-final/KxCraft.zip" rel="noopener noreferrer">Descargar KxCraft.zip <span aria-hidden="true">↗</span></a>
+            <p class="kx-auto-update-note">Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego.</p>
+            <div class="kx-pack-downloads" aria-label="Enlace de importación de KxCraft">
+              <label class="kx-import-label" for="kxcraft-import-url">Enlace directo para importar</label>
+              <div class="kx-import-link">
+                <input id="kxcraft-import-url" type="url" value="https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip" readonly aria-describedby="kxcraft-copy-status">
+                <button class="kx-panel-button" id="kxcraft-copy-link" type="button"><span>Copiar enlace de KxCraft</span><span aria-hidden="true">⧉</span></button>
+              </div>
+              <p class="kx-copy-status" id="kxcraft-copy-status" role="status" aria-live="polite" hidden></p>
             </div>
             <div class="kx-panel-foot">
-              <p>Versión 1.0.12</p>
-              <p>SHA-256 <code>1e0ca1a7211acbba494fe225c6834a16cd86dcba4adbc898c6a95c6d873d01db</code></p>
+              <p>Versión <span data-kx-package-version>1.0.12 · Hotfix 1</span></p>
+              <p>SHA-256 <code data-kx-package-sha256>75e9f7d6964baf65183b379b2ef0a11f7c94e298b356afaff693c09a1704dc4d</code></p>
             </div>
           </article>
         </div>

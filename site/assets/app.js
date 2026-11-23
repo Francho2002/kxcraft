@@ -1,6 +1,28 @@
 (() => {
   "use strict";
 
+  const input = document.getElementById("kxcraft-import-url");
+  const button = document.getElementById("kxcraft-copy-link");
+  const status = document.getElementById("kxcraft-copy-status");
+  if (!input || !button || !status) return;
+
+  button.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(input.value);
+      status.textContent = "¡Enlace copiado!";
+      status.hidden = false;
+    } catch {
+      input.focus();
+      input.select();
+      if (typeof input.setSelectionRange === "function") input.setSelectionRange(0, input.value.length);
+      status.textContent = "No se pudo copiar automáticamente. La URL quedó seleccionada; copiala manualmente.";
+      status.hidden = false;
+    }
+  });
+})();
+(() => {
+  "use strict";
+
   const dataNode = document.getElementById("kxcraft-playable-mods");
   const grid = document.getElementById("mods-grid");
   const filterRoot = document.getElementById("category-filters");
