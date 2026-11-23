@@ -248,7 +248,11 @@ foreach ($path in $actual) { Assert $expected.ContainsKey($path) "Unexpected pub
 foreach ($path in $expected.Keys) { Assert ($actual -contains $path) "Expected public file is missing: $path" }
 
 $html = [IO.File]::ReadAllText((Join-Path $root 'index.html'))
-Assert ($html.Contains('href="https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip"')) 'The public site must link to the single KxCraft.zip release asset.'
+$baselinePackagePanels = [regex]::Matches($html,'(?is)<article\b(?=[^>]*\bkx-play-panel--pack\b)[^>]*>.*?</article>')
+Assert ($baselinePackagePanels.Count -eq 1) 'The public page must contain exactly one KxCraft package panel.'
+$baselinePackagePanel = $baselinePackagePanels[0].Value
+Assert ([regex]::Matches($baselinePackagePanel,[regex]::Escape('https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.11/KxCraft.zip')).Count -eq 1) 'The KxCraft package link must match the immutable baseline URL.'
+Assert ([regex]::Matches($baselinePackagePanel,'(?i)SHA-256\s*<code>dc052893e0dab98d145ade26f86d8cbd92a9a534bedae50bf309b32638e546a1</code>').Count -eq 1) 'The KxCraft package hash must match the immutable baseline SHA-256.'
 Assert (([regex]::Matches($html,'(?i)Descargar KxCraft')).Count -eq 1) 'The page must contain exactly one KxCraft download control.'
 Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
 Assert ($html -match 'Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
