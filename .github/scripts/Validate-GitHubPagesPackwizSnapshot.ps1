@@ -291,6 +291,7 @@ Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[r
 foreach ($instruction in @('Abrí PrismLauncher.','Add Instance → Importar','Pegá el enlace que está debajo y pulsá OK.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
 Assert ([regex]::Matches($packagePanel,'(?is)<label\b[^>]*for="kxcraft-import-url">Enlace directo del modpack</label>').Count -eq 1) 'The import field label must identify the KxCraft modpack.'
 Assert ($packagePanel -notmatch '(?is)kx-panel-update-note|El modpack se actualizará automáticamente al iniciar el juego\.') 'The unwanted upper-corner auto-update notice must be removed.'
+Assert ([regex]::Matches($packagePanel,'(?is)<span class="kx-import-copy-icon" aria-hidden="true">\s*<svg\b').Count -eq 1) 'The URL field must display its subtle copy icon.'
 Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The standalone auto-update paragraph must be removed.'
 $appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
 Assert ($appJs.Contains('input.addEventListener("click"') -and $appJs.Contains('event.key === "Enter"') -and $appJs.Contains('event.code === "Space"')) 'The URL field must copy on click, Enter and Space.'
