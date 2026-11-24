@@ -42,7 +42,7 @@ function Test-KxSha256([string]$Value) { return $Value -match '^[0-9a-f]{64}$' }
 $manifestBytes = [IO.File]::ReadAllBytes([IO.Path]::GetFullPath($ManifestPath))
 $manifest = [Text.UTF8Encoding]::new($false,$true).GetString($manifestBytes) | ConvertFrom-Json -ErrorAction Stop
 if ($manifest.schemaVersion -ne 1 -or [string]$manifest.state -cne 'PUBLISHED') { throw 'Published-manifest signer accepts only schema-v1 PUBLISHED manifests.' }
-if ([int]$manifest.sequence -ne 4 -or [string]$manifest.updaterVersion -cne '1.0.2' -or [string]$manifest.minimumBootstrapVersion -cne '1.0.0') { throw 'Updater release version or sequence is invalid.' }
+if ([int]$manifest.sequence -ne 5 -or [string]$manifest.updaterVersion -cne '1.0.2' -or [string]$manifest.minimumBootstrapVersion -cne '1.0.0') { throw 'Updater release version or sequence is invalid.' }
 
 $bundleUri = [Uri]([string]$manifest.bundle.url)
 if ($bundleUri.Scheme -cne 'https' -or $bundleUri.Host -cne 'raw.githubusercontent.com' -or

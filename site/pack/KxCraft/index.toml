@@ -1004,3 +1004,9 @@ metafile = true
 file = "mods/YungsApi-1.21.1-NeoForge-5.1.9.jar.pw.toml"
 hash = "72ab41a09bf8b5b64787880fef38c9a32232abeafc07bb17f5650659e6d769a0"
 metafile = true
+
+[[files]]
+file = "mods/voicechat-neoforge-1.21.1-2.6.27.jar.pw.toml"
+hash = "695752b8263af9ba3bdbf4f43876284827dd2c410c97cf010fdb018e5dadacc4"
+metafile = true
+

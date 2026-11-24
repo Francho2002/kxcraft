@@ -268,7 +268,7 @@ Assert ([regex]::Matches($packagePanel,'(?is)<input\b(?=[^>]*\bid="kxcraft-impor
 Assert ($packagePanel -notmatch '(?is)<button\b') 'The import panel must not contain a separate copy button.'
 Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
 Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
-$visibleVersion = [regex]::Match($packagePanel,'(?is)<span\s+data-kx-package-version>(?<value>[^<]+)</span>')
+$visibleVersion = [regex]::Match($packagePanel,'(?is)Versión\s*(?<value>\d+\.\d+\.\d+)')
 Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersion.Groups['value'].Value) -ceq [string]$primary.Version) 'Visible package version must show the base Packwiz version.'
 Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must contain exactly three instructions.'
 Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
