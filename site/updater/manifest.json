@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "state": "PUBLISHED",
-  "sequence": 6,
+  "sequence": 7,
   "minimumBootstrapVersion": "1.0.0",
   "updaterVersion": "1.0.4",
   "bundle": {
@@ -24,10 +24,10 @@
   ],
   "channels": {
     "KxCraft": {
-      "packVersion": "1.0.13",
+      "packVersion": "1.0.15",
       "packTomlUrl": "https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml",
-      "packTomlSha256": "4a145325f888d11392b142b62ff272b8eb53b93871b05e7d5058eab0b11985c9",
-      "modCount": 202
+      "packTomlSha256": "acfd5bb2e85b396d4713a53f360f1a945204738f278914895da5b43b96e4157a",
+      "modCount": 201
     }
   }
 }
