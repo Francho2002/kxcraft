@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "state": "PUBLISHED",
-  "sequence": 7,
+  "sequence": 8,
   "minimumBootstrapVersion": "1.0.0",
   "updaterVersion": "1.0.4",
   "bundle": {
@@ -12,22 +12,22 @@
   },
   "files": [
     {
-      "path": "KxCraft-ManagedFiles.ps1",
-      "length": 11056,
-      "sha256": "a8cd2c439a46ba87bb5c05d8378a9f1c6a01b900e0fccd4aaa9de34e1325483d"
-    },
-    {
       "path": "KxCraft-Updater.ps1",
       "length": 27078,
       "sha256": "cd63d378d738254142de7a5d8fb0b4e798c40370ef299daabd4ab3ee8a457d5e"
+    },
+    {
+      "path": "KxCraft-ManagedFiles.ps1",
+      "length": 11056,
+      "sha256": "a8cd2c439a46ba87bb5c05d8378a9f1c6a01b900e0fccd4aaa9de34e1325483d"
     }
   ],
   "channels": {
     "KxCraft": {
-      "packVersion": "1.0.15",
+      "packVersion": "1.0.16",
       "packTomlUrl": "https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml",
-      "packTomlSha256": "acfd5bb2e85b396d4713a53f360f1a945204738f278914895da5b43b96e4157a",
-      "modCount": 201
+      "packTomlSha256": "a04eba47dc5ce9bd76a9803006adb86f3d6da335d59591d1aabf73954f9d8f15",
+      "modCount": 200
     }
   }
 }
