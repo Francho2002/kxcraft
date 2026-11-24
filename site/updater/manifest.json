@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "state": "PUBLISHED",
-  "sequence": 5,
+  "sequence": 6,
   "minimumBootstrapVersion": "1.0.0",
-  "updaterVersion": "1.0.2",
+  "updaterVersion": "1.0.4",
   "bundle": {
-    "url": "https://raw.githubusercontent.com/Francho2002/kxcraft/ab6123a2458edb8b94d523b6dab4dd16edca5249/distribution-v1/updater/releases/1.0.2/KxCraft-Updater.zip",
+    "url": "https://raw.githubusercontent.com/Francho2002/kxcraft/187b90b81aaf31a7c59bac0e54d70e86c0f14276/distribution-v1/updater/releases/1.0.4/KxCraft-Updater.zip",
     "immutableCommitStatus": "verified",
-    "length": 9540,
-    "sha256": "de0194d705b110bce20a5f86b04a3395db3897e325192145cefe7fd56dfc8b0b"
+    "length": 9646,
+    "sha256": "62665ded22c4369539e436e00dab79f0e71faadbbb893dc6e5053d140a99118a"
   },
   "files": [
     {
@@ -18,8 +18,8 @@
     },
     {
       "path": "KxCraft-Updater.ps1",
-      "length": 26509,
-      "sha256": "9d659b76e6ac9ca659da060766df9fa51391bcb5cdc3c02bbaedceddd1ed8b07"
+      "length": 27078,
+      "sha256": "cd63d378d738254142de7a5d8fb0b4e798c40370ef299daabd4ab3ee8a457d5e"
     }
   ],
   "channels": {
