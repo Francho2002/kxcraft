@@ -101,6 +101,12 @@ function Assert-KxCraftImmutableModUrl([string]$Url, [string]$Relative, [string]
                 throw "CurseForge source must use a file-ID-pinned direct CDN URL: $Relative"
             }
         }
+        'mediafilez.forgecdn.net' {
+            $pathMatch = [regex]::Match($path, '^/files/[0-9]{1,4}/[0-9]{1,4}/([^/]+\.jar)$')
+            if (!$pathMatch.Success -or $pathMatch.Groups[1].Value -cne $Filename) {
+                throw "CurseForge mirror source must use a file-ID-pinned direct URL whose filename matches the Packwiz record: $Relative"
+            }
+        }
         default {
             throw "Mod source host is not allowed: $($downloadUrl.Host)"
         }

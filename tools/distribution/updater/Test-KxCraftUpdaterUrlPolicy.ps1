@@ -21,11 +21,14 @@ Invoke-Expression $functionAst.Extent.Text
 
 $commit = 'a1234567890abcdef1234567890abcdef1234567'
 $plain = 'https://raw.githubusercontent.com/Francho2002/kxcraft/' + $commit + '/binaries/mods/example.jar'
+$mediafilez = 'https://mediafilez.forgecdn.net/files/8281/390/shipmanager-1.1.jar'
 $validCases = @(
     @{ Url=$plain; File='example.jar' },
     @{ Url=('https://raw.githubusercontent.com/Francho2002/kxcraft/' + $commit + '/binaries/mods/1.0.12/example.jar'); File='example.jar' },
     @{ Url=('https://raw.githubusercontent.com/Francho2002/kxcraft/' + $commit + '/binaries/mods/1.0.12-rc.1+build.2/example.jar'); File='example.jar' },
-    @{ Url='https://raw.githubusercontent.com/Francho2002/kxcraft/8059b7e8c502a64c8e106cc054913b6b222e9c43/binaries/mods/1.0.12/create-military-integration-0.1.0-dev.jar'; File='create-military-integration-0.1.0-dev.jar' }
+    @{ Url='https://raw.githubusercontent.com/Francho2002/kxcraft/8059b7e8c502a64c8e106cc054913b6b222e9c43/binaries/mods/1.0.12/create-military-integration-0.1.0-dev.jar'; File='create-military-integration-0.1.0-dev.jar' },
+    @{ Url='https://mediafilez.forgecdn.net/files/8281/390/shipmanager-1.1.jar'; File='shipmanager-1.1.jar' },
+    @{ Url='https://mediafilez.forgecdn.net/files/123/456/example.jar'; File='example.jar' }
 )
 foreach ($case in $validCases) {
     $relative = 'mods/' + $case.File + '.pw.toml'
@@ -56,9 +59,26 @@ foreach ($case in $invalidCases) {
     if (!$rejected) { throw ('Unsafe GitHub URL was accepted: ' + $case.Url) }
 }
 
+$invalidMediafilezCases = @(
+    @{ Url=($mediafilez + '?download=1'); File='shipmanager-1.1.jar' },
+    @{ Url=($mediafilez + '#fragment'); File='shipmanager-1.1.jar' },
+    @{ Url=$mediafilez.Replace('https://','http://'); File='shipmanager-1.1.jar' },
+    @{ Url=$mediafilez.Replace('mediafilez.forgecdn.net','evil-mediafilez.forgecdn.net'); File='shipmanager-1.1.jar' },
+    @{ Url=$mediafilez.Replace('/files/8281/390/','/files/8281/latest/'); File='shipmanager-1.1.jar' },
+    @{ Url=$mediafilez.Replace('/files/8281/390/','/files/8281/390/nested/'); File='shipmanager-1.1.jar' },
+    @{ Url=$mediafilez; File='different-name.jar' }
+)
+foreach ($case in $invalidMediafilezCases) {
+    $rejected = $false
+    try { Assert-KxCraftImmutableModUrl $case.Url ('mods/' + $case.File + '.pw.toml') $case.File }
+    catch { $rejected = $true }
+    if (!$rejected) { throw ('Unsafe CurseForge mirror URL was accepted: ' + $case.Url) }
+}
+
 $metafiles = @(Get-ChildItem -LiteralPath (Join-Path $PackRoot 'mods') -Filter '*.pw.toml' -File)
 if ($metafiles.Count -ne 202) { throw ('Expected 202 Packwiz mod metafiles; found ' + $metafiles.Count) }
 $githubUrls = 0
+$hostCounts = @{}
 $cmiFound = $false
 foreach ($meta in $metafiles) {
     $text = [IO.File]::ReadAllText($meta.FullName)
@@ -70,9 +90,10 @@ foreach ($meta in $metafiles) {
     $url = $urlMatch.Groups[1].Value
     $uri = $null
     if (![Uri]::TryCreate($url, [UriKind]::Absolute, [ref]$uri)) { throw ('Invalid absolute mod URL: ' + $meta.Name) }
+    Assert-KxCraftImmutableModUrl $url ('mods/' + $filename + '.pw.toml') $filename
+    if (!$hostCounts.ContainsKey($uri.Host)) { $hostCounts[$uri.Host] = 0 }
+    $hostCounts[$uri.Host]++
     if ($uri.Host -ceq 'raw.githubusercontent.com') {
-        $relative = 'mods/' + $filename + '.pw.toml'
-        Assert-KxCraftImmutableModUrl $url $relative $filename
         $githubUrls++
     }
     if ($filename -ceq 'create-military-integration-0.1.0-dev.jar') {
@@ -82,13 +103,19 @@ foreach ($meta in $metafiles) {
     }
 }
 if ($githubUrls -ne 22) { throw ('Expected to validate all 22 GitHub mod URLs; found ' + $githubUrls) }
+if ($hostCounts['cdn.modrinth.com'] -ne 152 -or $hostCounts['edge.forgecdn.net'] -ne 27 -or
+    $hostCounts['mediafilez.forgecdn.net'] -ne 1 -or $hostCounts['raw.githubusercontent.com'] -ne 22) {
+    throw 'The Packwiz URL host inventory differs from the audited 202-mod baseline.'
+}
 if (!$cmiFound) { throw 'Approved CMI entry was not found in the 202-mod Packwiz inventory.' }
 
 [pscustomobject]@{
     result = 'PASS'
     urlPolicyCasesAccepted = $validCases.Count
-    unsafeUrlCasesRejected = $invalidCases.Count
+    unsafeUrlCasesRejected = ($invalidCases.Count + $invalidMediafilezCases.Count)
     packModMetafiles = $metafiles.Count
+    allModUrlsValidated = $metafiles.Count
+    hostCounts = $hostCounts
     gitHubUrlsValidated = $githubUrls
     cmiVersionedUrlAccepted = $cmiFound
     packRoot = $PackRoot

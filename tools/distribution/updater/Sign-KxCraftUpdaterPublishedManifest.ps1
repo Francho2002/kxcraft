@@ -25,7 +25,7 @@ $CandidateRoot = [IO.Path]::GetFullPath($CandidateRoot)
 if ([string]::IsNullOrWhiteSpace($ManifestPath)) { $ManifestPath = Join-Path $CandidateRoot 'site\updater\manifest.json' }
 if ([string]::IsNullOrWhiteSpace($SignaturePath)) { $SignaturePath = $ManifestPath -replace '\.json$','.sig' }
 if ([string]::IsNullOrWhiteSpace($PackRoot)) { $PackRoot = Join-Path $CandidateRoot 'site\pack\KxCraft' }
-if ([string]::IsNullOrWhiteSpace($BundlePath)) { $BundlePath = Join-Path $CandidateRoot 'binaries\distribution-v1\updater\releases\1.0.3\KxCraft-Updater.zip' }
+if ([string]::IsNullOrWhiteSpace($BundlePath)) { $BundlePath = Join-Path $CandidateRoot 'binaries\distribution-v1\updater\releases\1.0.4\KxCraft-Updater.zip' }
 if ([string]::IsNullOrWhiteSpace($UpdaterPath)) { $UpdaterPath = Join-Path $projectRoot 'tools\distribution\updater\KxCraft-Updater.ps1' }
 if ([string]::IsNullOrWhiteSpace($ManagedFilesPath)) { $ManagedFilesPath = Join-Path $projectRoot 'tools\packwiz\KxCraft-ManagedFiles.ps1' }
 if ([string]::IsNullOrWhiteSpace($PublicKeyPath)) { $PublicKeyPath = Join-Path $projectRoot 'tools\distribution\updater\public-key.csp.base64' }
@@ -42,7 +42,7 @@ function Test-KxSha256([string]$Value) { return $Value -match '^[0-9a-f]{64}$' }
 $manifestBytes = [IO.File]::ReadAllBytes([IO.Path]::GetFullPath($ManifestPath))
 $manifest = [Text.UTF8Encoding]::new($false,$true).GetString($manifestBytes) | ConvertFrom-Json -ErrorAction Stop
 if ($manifest.schemaVersion -ne 1 -or [string]$manifest.state -cne 'PUBLISHED') { throw 'Published-manifest signer accepts only schema-v1 PUBLISHED manifests.' }
-if ([int]$manifest.sequence -ne 6 -or [string]$manifest.updaterVersion -cne '1.0.3' -or [string]$manifest.minimumBootstrapVersion -cne '1.0.0') { throw 'Updater release version or sequence is invalid.' }
+if ([int]$manifest.sequence -ne 6 -or [string]$manifest.updaterVersion -cne '1.0.4' -or [string]$manifest.minimumBootstrapVersion -cne '1.0.0') { throw 'Updater release version or sequence is invalid.' }
 
 $bundleUri = [Uri]([string]$manifest.bundle.url)
 if ($bundleUri.Scheme -cne 'https' -or $bundleUri.Host -cne 'raw.githubusercontent.com' -or
