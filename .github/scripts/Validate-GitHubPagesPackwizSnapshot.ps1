@@ -268,7 +268,7 @@ Assert ([regex]::Matches($packagePanel,'(?is)<span\b(?=[^>]*\bid="kxcraft-import
 Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bid="kxcraft-copy-button")(?=[^>]*\btype="button")(?=[^>]*\bclass="kx-import-copy-button")[^>]*>.*?</button>').Count -eq 1 -and [regex]::Matches($packagePanel,'(?is)<button\b').Count -eq 1) 'The import panel must contain only its accessible copy button.'
 Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
 Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
-$visibleVersion = [regex]::Match($packagePanel,'(?is)Versión\s*(?<value>\d+\.\d+\.\d+)')
+$visibleVersion = [regex]::Match($packagePanel,'(?is)Versión\s*(?:<span\s+data-kx-package-version>)?\s*(?<value>\d+\.\d+\.\d+)')
 Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersion.Groups['value'].Value) -ceq [string]$primary.Version) 'Visible package version must show the base Packwiz version.'
 Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must contain exactly three instructions.'
 Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
@@ -281,7 +281,7 @@ Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mod
 $appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
 Assert ($appJs.Contains('copyButton.addEventListener("click"') -and $appJs.Contains('navigator.clipboard.writeText(importUrl)')) 'Only the copy button may initiate URL copying.'
 Assert ($appJs.Contains('document.execCommand("copy")') -and $appJs.Contains('No se pudo copiar.') -and !$appJs.Contains('¡Enlace copiado!') -and !$appJs.Contains('URL quedó seleccionada')) 'Button-triggered clipboard copy must retain error feedback without a success toast or manual-selection fallback.'
-Assert ($appJs.Contains('__kxcraftSpaNavigationInstalled') -and $appJs.Contains('history.pushState') -and $appJs.Contains('popstate') -and $appJs.Contains('waitForVisibleContent')) 'The site must use loaded-content SPA navigation with browser history.'
+Assert ($appJs.Contains('__kxcraftSpaNavigationInstalled') -and $appJs.Contains('history.pushState') -and $appJs.Contains('popstate') -and $appJs.Contains('requestAnimationFrame') -and $appJs.Contains('prefers-reduced-motion')) 'The site must retain SPA navigation, browser history and reduced-motion support.'
 $siteCss = [IO.File]::ReadAllText((Join-Path $root 'assets/site.css'))
 Assert ($siteCss.Contains('user-select: none !important') -and $siteCss.Contains('cursor: default !important') -and $siteCss.Contains('kx-page-transition-in-active')) 'Global text-selection suppression and SPA transition styles are required.'
 foreach ($page in @('index.html','mods.html','schematics.html','tienda.html')) {
