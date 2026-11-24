@@ -856,11 +856,6 @@ hash = "1aa6cb4ebc1a0ff7e40acfca1519bba1af1956140e396a24d6dfcc3274c08001"
 metafile = true
 
 [[files]]
-file = "mods/shipmanager-1.1.jar.pw.toml"
-hash = "2873536bd52aa48d8c5eacfca35293a63383ed37f873f762d7584548c6a2d0df"
-metafile = true
-
-[[files]]
 file = "mods/sim_copycats-1.3.2.jar.pw.toml"
 hash = "985175d92481e660ac8e166120b963f723d8bb57186665975e3e9093041b1321"
 metafile = true
@@ -1009,4 +1004,3 @@ metafile = true
 file = "mods/voicechat-neoforge-1.21.1-2.6.27.jar.pw.toml"
 hash = "695752b8263af9ba3bdbf4f43876284827dd2c410c97cf010fdb018e5dadacc4"
 metafile = true
-
