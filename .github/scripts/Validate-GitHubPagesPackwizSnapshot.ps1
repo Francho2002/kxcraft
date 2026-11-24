@@ -264,8 +264,8 @@ $latestImportUrl = 'https://github.com/Francho2002/kxcraft/releases/latest/downl
 Assert ([string]$packageGate.packageFileName -ceq 'KxCraft.zip' -and [long]$packageGate.packageLength -gt 0 -and $packageHash -match '^[0-9a-f]{64}$') 'The KxCraft ZIP release metadata is incomplete.'
 Assert ($packageVersion -match ('^'+[regex]::Escape([string]$primary.Version)+'(?: · Hotfix [0-9]+)?$')) 'The KxCraft ZIP package version does not match the Packwiz version.'
 Assert ($packageUrl -match ('^https://github\.com/Francho2002/kxcraft/releases/download/kxc-'+[regex]::Escape([string]$primary.Version)+'(?:-(?:final|hotfix[0-9]+))?/KxCraft\.zip$')) 'The KxCraft ZIP metadata must point to an immutable versioned release asset.'
-Assert ([regex]::Matches($packagePanel,'(?is)<input\b(?=[^>]*\bid="kxcraft-import-url")(?=[^>]*\btype="url")(?=[^>]*\bvalue="'+[regex]::Escape($latestImportUrl)+'")(?=[^>]*\breadonly\b)[^>]*>').Count -eq 1) 'The page must show the exact read-only latest ZIP URL for Prism import.'
-Assert ($packagePanel -notmatch '(?is)<button\b') 'The import panel must not contain a separate copy button.'
+Assert ([regex]::Matches($packagePanel,'(?is)<span\b(?=[^>]*\bid="kxcraft-import-url")[^>]*>\s*'+[regex]::Escape($latestImportUrl)+'\s*</span>').Count -eq 1) 'The page must show the exact latest ZIP URL as non-selectable text.'
+Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bid="kxcraft-copy-button")(?=[^>]*\btype="button")(?=[^>]*\bclass="kx-import-copy-button")[^>]*>.*?</button>').Count -eq 1 -and [regex]::Matches($packagePanel,'(?is)<button\b').Count -eq 1) 'The import panel must contain only its accessible copy button.'
 Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
 Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
 $visibleVersion = [regex]::Match($packagePanel,'(?is)Versión\s*(?<value>\d+\.\d+\.\d+)')
@@ -274,15 +274,22 @@ Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must 
 Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
 Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[regex]::Escape($packageHash)+'</code>').Count -eq 1) 'Visible package SHA-256 differs from release.json.'
 foreach ($instruction in @('Instalá PrismLauncher-Cracked y creá tu perfil.','Add Instance → Importar','Pegá el enlace que está debajo. Los mods se descargarán y actualizarán automáticamente.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
-Assert ([regex]::Matches($packagePanel,'(?is)<label\b[^>]*for="kxcraft-import-url">Enlace directo del modpack</label>').Count -eq 1) 'The import field label must identify the KxCraft modpack.'
+Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*class="kx-import-label">Enlace directo del modpack</p>').Count -eq 1) 'The import label must identify the KxCraft modpack.'
 Assert ($packagePanel -notmatch '(?is)kx-panel-update-note|El modpack se actualizará automáticamente al iniciar el juego\.') 'The unwanted upper-corner auto-update notice must be removed.'
-Assert ([regex]::Matches($packagePanel,'(?is)<span class="kx-import-copy-icon" aria-hidden="true">\s*<svg\b').Count -eq 1) 'The URL field must display its subtle copy icon.'
+Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bclass="kx-import-copy-button")[^>]*>\s*<svg\b').Count -eq 1) 'The import button must display its subtle copy icon.'
 Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The standalone auto-update paragraph must be removed.'
 $appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
-Assert ($appJs.Contains('input.addEventListener("click"') -and $appJs.Contains('event.key === "Enter"') -and $appJs.Contains('event.code === "Space"')) 'The URL field must copy on click, Enter and Space.'
-Assert ($appJs.Contains('navigator.clipboard.writeText(input.value)') -and $appJs.Contains('input.select()') -and $appJs.Contains('¡Enlace copiado!')) 'URL clipboard copy and manual selection fallback are required.'
+Assert ($appJs.Contains('copyButton.addEventListener("click"') -and $appJs.Contains('navigator.clipboard.writeText(importUrl)')) 'Only the copy button may initiate URL copying.'
+Assert ($appJs.Contains('document.execCommand("copy")') -and $appJs.Contains('¡Enlace copiado!') -and !$appJs.Contains('URL quedó seleccionada')) 'Button-triggered clipboard copy and confirmation are required without exposing a manual-selection fallback.'
+Assert ($appJs.Contains('__kxcraftSpaNavigationInstalled') -and $appJs.Contains('history.pushState') -and $appJs.Contains('popstate') -and $appJs.Contains('waitForVisibleContent')) 'The site must use loaded-content SPA navigation with browser history.'
+$siteCss = [IO.File]::ReadAllText((Join-Path $root 'assets/site.css'))
+Assert ($siteCss.Contains('user-select: none !important') -and $siteCss.Contains('cursor: default !important') -and $siteCss.Contains('kx-page-transition-in-active')) 'Global text-selection suppression and SPA transition styles are required.'
+foreach ($page in @('index.html','mods.html','schematics.html','tienda.html')) {
+    $pageHtml = [IO.File]::ReadAllText((Join-Path $root $page))
+    Assert ($pageHtml.Contains('assets/app.js')) "SPA navigation asset is missing from $page."
+}
 Assert ($html -match 'PrismLauncher-Cracked/releases/download/11\.1\.1/PrismLauncher-Windows-MinGW-w64-Setup-11\.1\.1\.exe') 'The PrismLauncher download in step 01 is missing.'
 Assert ($html -notmatch 'Descargá KxCraft\.zip e importalo|Descargar KxCraft\.zip') 'The old manual KxCraft ZIP download flow remains.'
 Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
 
-Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); signed Updater, package version/hash, latest import URL, clickable keyboard-accessible URL and no manual download checks passed.")
+Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); signed Updater, package version/hash, button-only copy, SPA navigation and no manual download checks passed.")

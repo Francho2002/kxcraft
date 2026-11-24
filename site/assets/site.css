@@ -909,50 +909,72 @@ kbd {
 }
 
 .kx-import-link {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: start;
-  gap: 8px;
-}
-
-.kx-import-link input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   min-width: 0;
   min-height: 53px;
-  padding: 0 44px 0 16px;
-  border: 0;
-  border-radius: 0;
+  padding: 8px 12px 8px 16px;
   color: #171611;
   background: var(--kx-gold);
+}
+
+.kx-import-url {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: inherit;
   font: inherit;
   font-size: 12px;
   font-weight: 850;
   line-height: 1.5;
-  cursor: pointer;
 }
 
-.kx-import-copy-icon {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  z-index: 1;
-  width: 17px;
-  height: 17px;
+.kx-import-copy-button {
+  display: grid;
+  flex: 0 0 28px;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
   color: #171611;
-  pointer-events: none;
-  transform: translateY(-50%);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 140ms ease, transform 140ms ease;
 }
 
-.kx-import-copy-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+.kx-import-copy-button:hover {
+  background: rgb(23 22 17 / 9%);
 }
 
-.kx-import-link input:focus-visible {
+.kx-import-copy-button:active {
+  transform: scale(.94);
+}
+
+.kx-import-copy-button:focus-visible {
   outline: 2px solid #171611;
   outline-offset: 2px;
+}
+
+.kx-import-copy-button svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+}
+
+.kx-clipboard-helper {
+  position: fixed !important;
+  top: 0 !important;
+  left: -10000px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 .kx-copy-status {
@@ -1265,3 +1287,72 @@ kbd {
 /* No dejar una caja vacía enorme cuando aún no se dispone de la foto exacta. */
 .schematic-card--image-missing .schematic-media { aspect-ratio: auto; min-height: 78px; }
 .schematic-card--image-missing .schematic-image-fallback { min-height: 78px; }
+
+
+/* KxCraft page polish: prevent text highlights and reveal SPA pages after they are ready. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body,
+body * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  cursor: default !important;
+}
+
+a[href],
+button,
+summary,
+[role="button"],
+[tabindex],
+label[for] {
+  cursor: pointer !important;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+::selection {
+  color: inherit;
+  background: transparent;
+}
+
+.topbar,
+#main,
+.footer {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+body.kx-page-transition-out .topbar,
+body.kx-page-transition-out #main,
+body.kx-page-transition-out .footer,
+body.kx-page-transition-in .topbar,
+body.kx-page-transition-in #main,
+body.kx-page-transition-in .footer {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+}
+
+body.kx-page-transition-in-active .topbar,
+body.kx-page-transition-in-active #main,
+body.kx-page-transition-in-active .footer {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  #main,
+  .footer {
+    transition: none !important;
+  }
+  .kx-import-copy-button {
+    transition: none !important;
+  }
+}

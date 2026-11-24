@@ -8,6 +8,7 @@
   <title>KxCraft — Juega ahora</title>
   <link rel="stylesheet" href="assets/site.css">
   <script src="assets/store-expiry.js" defer></script>
+  <script src="assets/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -61,10 +62,11 @@
               <li><span>3</span><p>Pegá el enlace que está debajo. Los mods se descargarán y actualizarán automáticamente.</p></li>
             </ol>
             <div class="kx-pack-downloads" aria-label="Enlace de importación de KxCraft">
-              <label class="kx-import-label" for="kxcraft-import-url">Enlace directo del modpack</label>
+              <p class="kx-import-label">Enlace directo del modpack</p>
               <div class="kx-import-link">
-                <input id="kxcraft-import-url" type="url" value="https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip" readonly aria-label="Enlace de importación de KxCraft; Enter o Espacio para copiar" aria-describedby="kxcraft-copy-status">
-                <span class="kx-import-copy-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="8" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V5.75A1.75 1.75 0 0 0 14.25 4h-8.5A1.75 1.75 0 0 0 4 5.75v8.5A1.75 1.75 0 0 0 5.75 16H8" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <span id="kxcraft-import-url" class="kx-import-url">https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip</span>
+                <button class="kx-import-copy-button" id="kxcraft-copy-button" type="button" aria-label="Copiar enlace del modpack" aria-describedby="kxcraft-copy-status" title="Copiar enlace"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V5.75A1.75 1.75 0 0 0 14.25 4h-8.5A1.75 1.75 0 0 0 4 5.75v8.5A1.75 1.75 0 0 0 5.75 16H8" stroke="currentColor" stroke-width="1.8"/></svg></button>
+
               </div>
               <p class="kx-copy-status" id="kxcraft-copy-status" role="status" aria-live="polite" hidden></p>
             </div>

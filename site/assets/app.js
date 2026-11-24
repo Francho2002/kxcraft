@@ -1,34 +1,47 @@
 (() => {
   "use strict";
 
-  const input = document.getElementById("kxcraft-import-url");
+  const urlNode = document.getElementById("kxcraft-import-url");
+  const copyButton = document.getElementById("kxcraft-copy-button");
   const status = document.getElementById("kxcraft-copy-status");
-  if (!input || !status) return;
+  if (!urlNode || !copyButton || !status) return;
+
+  const importUrl = urlNode.textContent.trim();
 
   async function copyImportUrl() {
+    let copied = false;
     try {
       if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
         throw new Error("Clipboard API unavailable");
       }
-      await navigator.clipboard.writeText(input.value);
-      status.textContent = "¡Enlace copiado!";
+      await navigator.clipboard.writeText(importUrl);
+      copied = true;
     } catch {
-      input.focus();
-      input.select();
-      if (typeof input.setSelectionRange === "function") input.setSelectionRange(0, input.value.length);
-      status.textContent = "No se pudo copiar automáticamente. La URL quedó seleccionada; copiala manualmente.";
+      const helper = document.createElement("textarea");
+      helper.className = "kx-clipboard-helper";
+      helper.value = importUrl;
+      helper.setAttribute("readonly", "");
+      helper.tabIndex = -1;
+      document.body.append(helper);
+      try {
+        helper.focus({ preventScroll: true });
+        helper.select();
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+      helper.remove();
     }
+
+    status.textContent = copied
+      ? "¡Enlace copiado!"
+      : "No se pudo copiar. Permití el acceso al portapapeles y volvé a intentarlo.";
     status.hidden = false;
   }
 
-  input.addEventListener("click", () => { void copyImportUrl(); });
-  input.addEventListener("keydown", (event) => {
-    if ((event.key === "Enter" || event.key === " " || event.code === "Space") && !event.repeat) {
-      event.preventDefault();
-      void copyImportUrl();
-    }
-  });
+  copyButton.addEventListener("click", () => { void copyImportUrl(); });
 })();
+
 (() => {
   "use strict";
 
@@ -245,12 +258,237 @@
   }
 
   queryInput.addEventListener("input", drawMods);
+  const pageScope = new AbortController();
+  document.addEventListener("kxcraft:page-leave", () => pageScope.abort(), { once: true });
   document.addEventListener("keydown", (event) => {
     if (event.key === "/" && document.activeElement !== queryInput && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault();
       queryInput.focus();
     }
-  });
+  }, { signal: pageScope.signal });
   drawFilters();
   drawMods();
+})();
+
+(() => {
+  "use strict";
+  if (window.__kxcraftSpaNavigationInstalled) return;
+  window.__kxcraftSpaNavigationInstalled = true;
+
+  const pageFiles = new Set(["index.html", "mods.html", "schematics.html", "tienda.html"]);
+  const basePath = new URL("./", window.location.href).pathname;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const transitionTime = reducedMotion ? 0 : 220;
+  let navigationActive = false;
+
+  function waitForTransition(element) {
+    if (!transitionTime || !element) return Promise.resolve();
+    return new Promise((resolve) => {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        element.removeEventListener("transitionend", finish);
+        window.clearTimeout(timeout);
+        resolve();
+      };
+      const timeout = window.setTimeout(finish, transitionTime + 100);
+      element.addEventListener("transitionend", finish, { once: true });
+    });
+  }
+
+  function resolvePageUrl(value) {
+    let url;
+    try {
+      url = new URL(value, window.location.href);
+    } catch {
+      return null;
+    }
+    if (url.origin !== window.location.origin || url.search || !url.pathname.startsWith(basePath)) return null;
+    const relativePath = url.pathname === basePath ? "index.html" : url.pathname.slice(basePath.length);
+    if (!pageFiles.has(relativePath) || relativePath.includes("/")) return null;
+    return url;
+  }
+
+  async function ensureStyles(nextDocument, pageUrl) {
+    const stylesheets = Array.from(nextDocument.querySelectorAll('link[rel~="stylesheet"][href]'));
+    for (const source of stylesheets) {
+      const href = new URL(source.getAttribute("href"), pageUrl).href;
+      const alreadyLoaded = Array.from(document.querySelectorAll('link[rel~="stylesheet"][href]'))
+        .some((link) => link.href === href);
+      if (alreadyLoaded) continue;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      await new Promise((resolve, reject) => {
+        link.addEventListener("load", resolve, { once: true });
+        link.addEventListener("error", reject, { once: true });
+        document.head.append(link);
+      });
+    }
+  }
+
+  function isInertScript(script) {
+    const type = (script.getAttribute("type") || "").trim().toLowerCase();
+    if (!type) return false;
+    return !["module", "text/javascript", "application/javascript", "text/ecmascript", "application/ecmascript"].includes(type);
+  }
+
+  function appendScript(source, pageUrl) {
+    const script = document.createElement("script");
+    for (const attribute of Array.from(source.attributes)) {
+      if (["src", "defer", "async"].includes(attribute.name.toLowerCase())) continue;
+      script.setAttribute(attribute.name, attribute.value);
+    }
+    script.dataset.kxSpaScript = "true";
+
+    if (source.hasAttribute("src")) {
+      script.src = new URL(source.getAttribute("src"), pageUrl).href;
+      if (script.type !== "module") script.async = false;
+      return new Promise((resolve, reject) => {
+        script.addEventListener("load", resolve, { once: true });
+        script.addEventListener("error", reject, { once: true });
+        document.body.append(script);
+      });
+    }
+
+    script.textContent = source.textContent;
+    document.body.append(script);
+    return Promise.resolve();
+  }
+
+  function waitForImage(image) {
+    const bounds = image.getBoundingClientRect();
+    if (image.loading === "lazy" && bounds.top > window.innerHeight * 1.25) return Promise.resolve();
+    if (image.complete) return image.decode ? image.decode().catch(() => {}) : Promise.resolve();
+    return new Promise((resolve) => {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        image.removeEventListener("load", finish);
+        image.removeEventListener("error", finish);
+        if (image.decode) image.decode().catch(() => {}).then(resolve);
+        else resolve();
+      };
+      const timeout = window.setTimeout(finish, 4000);
+      image.addEventListener("load", finish, { once: true });
+      image.addEventListener("error", finish, { once: true });
+    });
+  }
+
+  async function waitForVisibleContent(roots) {
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready.catch(() => {});
+    }
+    const images = roots.flatMap((root) => Array.from(root.querySelectorAll("img")));
+    await Promise.all(images.map(waitForImage));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  }
+
+  function syncPageMetadata(nextDocument) {
+    document.title = nextDocument.title;
+    if (nextDocument.documentElement.lang) {
+      document.documentElement.lang = nextDocument.documentElement.lang;
+    }
+    const nextDescription = nextDocument.querySelector('meta[name="description"]');
+    const currentDescription = document.querySelector('meta[name="description"]');
+    if (nextDescription && currentDescription) {
+      currentDescription.setAttribute("content", nextDescription.getAttribute("content") || "");
+    }
+  }
+
+  async function navigate(pageUrl, addHistoryEntry) {
+    if (navigationActive) return;
+    navigationActive = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(pageUrl.href, {
+        credentials: "same-origin",
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error("Page request failed");
+      const html = await response.text();
+      const nextDocument = new DOMParser().parseFromString(html, "text/html");
+      const nextHeader = nextDocument.querySelector(".topbar");
+      const nextMain = nextDocument.querySelector("main#main");
+      const nextFooter = nextDocument.querySelector(".footer");
+      const currentHeader = document.querySelector(".topbar");
+      const currentMain = document.querySelector("main#main");
+      const currentFooter = document.querySelector(".footer");
+      if (!nextHeader || !nextMain || !nextFooter || !currentHeader || !currentMain || !currentFooter) {
+        throw new Error("Page structure is not compatible with SPA navigation");
+      }
+
+      await ensureStyles(nextDocument, pageUrl);
+      document.body.classList.add("kx-page-transition-out");
+      await waitForTransition(currentMain);
+      document.dispatchEvent(new Event("kxcraft:page-leave"));
+
+      const header = document.importNode(nextHeader, true);
+      const main = document.importNode(nextMain, true);
+      const footer = document.importNode(nextFooter, true);
+      currentHeader.replaceWith(header);
+      currentMain.replaceWith(main);
+      currentFooter.replaceWith(footer);
+      document.body.querySelectorAll("script").forEach((script) => script.remove());
+      syncPageMetadata(nextDocument);
+
+      const scripts = Array.from(nextDocument.querySelectorAll("script"));
+      for (const script of scripts.filter(isInertScript)) {
+        await appendScript(script, pageUrl);
+      }
+      for (const script of scripts.filter((item) => !isInertScript(item))) {
+        await appendScript(script, pageUrl);
+      }
+
+      await waitForVisibleContent([header, main, footer]);
+      if (addHistoryEntry) {
+        window.history.pushState({ kxcraftSpa: true }, "", pageUrl.href);
+      }
+
+      if (pageUrl.hash) {
+        let id = pageUrl.hash.slice(1);
+        try { id = decodeURIComponent(id); } catch {}
+        const anchor = document.getElementById(id);
+        if (anchor) anchor.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+        else window.scrollTo(0, 0);
+      } else {
+        window.scrollTo(0, 0);
+      }
+
+      document.body.classList.remove("kx-page-transition-out");
+      document.body.classList.add("kx-page-transition-in");
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.body.classList.add("kx-page-transition-in-active");
+      }));
+      await waitForTransition(main);
+      document.body.classList.remove("kx-page-transition-in", "kx-page-transition-in-active");
+    } catch {
+      document.body.classList.remove("kx-page-transition-out", "kx-page-transition-in", "kx-page-transition-in-active");
+      window.location.assign(pageUrl.href);
+    } finally {
+      window.clearTimeout(timeout);
+      navigationActive = false;
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const link = target && target.closest("a[href]");
+    if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self") || link.relList.contains("external")) return;
+    const pageUrl = resolvePageUrl(link.href);
+    if (!pageUrl || (pageUrl.pathname === window.location.pathname && pageUrl.hash !== window.location.hash)) return;
+    if (pageUrl.href === window.location.href) return;
+    event.preventDefault();
+    void navigate(pageUrl, true);
+  });
+
+  window.addEventListener("popstate", () => {
+    const pageUrl = resolvePageUrl(window.location.href);
+    if (pageUrl) void navigate(pageUrl, false);
+  });
 })();

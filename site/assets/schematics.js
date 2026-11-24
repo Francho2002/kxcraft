@@ -9,10 +9,12 @@
   const categoryFilters = document.getElementById("schematics-category-filters");
   const aircraftClassifier = document.getElementById("schematics-aircraft-classifier");
   const aircraftFilters = document.getElementById("schematics-aircraft-filters");
+  const pageScope = new AbortController();
+  document.addEventListener("kxcraft:page-leave", () => pageScope.abort(), { once: true });
   const backToTop = document.getElementById("back-to-top");
   if (backToTop) {
     const updateBackToTop = () => { backToTop.hidden = window.scrollY < 480; };
-    window.addEventListener("scroll", updateBackToTop, { passive: true });
+    window.addEventListener("scroll", updateBackToTop, { passive: true, signal: pageScope.signal });
     backToTop.addEventListener("click", () => {
       window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     });

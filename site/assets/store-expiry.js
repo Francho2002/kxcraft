@@ -34,5 +34,6 @@
     }
   };
   sync();
-  window.setInterval(sync, 1000);
+  const timer = window.setInterval(sync, 1000);
+  document.addEventListener("kxcraft:page-leave", () => window.clearInterval(timer), { once: true });
 })();
