@@ -278,7 +278,7 @@
   const pageFiles = new Set(["index.html", "mods.html", "schematics.html", "tienda.html"]);
   const basePath = new URL("./", window.location.href).pathname;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const transitionTime = reducedMotion ? 0 : 120;
+  const transitionTime = reducedMotion ? 0 : 80;
   let navigationActive = false;
 
   function waitForTransition(element) {
@@ -357,36 +357,6 @@
     return Promise.resolve();
   }
 
-  function waitForImage(image) {
-    const bounds = image.getBoundingClientRect();
-    if (image.loading === "lazy" && bounds.top > window.innerHeight * 1.25) return Promise.resolve();
-    if (image.complete) return image.decode ? image.decode().catch(() => {}) : Promise.resolve();
-    return new Promise((resolve) => {
-      let finished = false;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
-        window.clearTimeout(timeout);
-        image.removeEventListener("load", finish);
-        image.removeEventListener("error", finish);
-        if (image.decode) image.decode().catch(() => {}).then(resolve);
-        else resolve();
-      };
-      const timeout = window.setTimeout(finish, 4000);
-      image.addEventListener("load", finish, { once: true });
-      image.addEventListener("error", finish, { once: true });
-    });
-  }
-
-  async function waitForVisibleContent(roots) {
-    if (document.fonts && document.fonts.ready) {
-      await document.fonts.ready.catch(() => {});
-    }
-    const images = roots.flatMap((root) => Array.from(root.querySelectorAll("img")));
-    await Promise.all(images.map(waitForImage));
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  }
-
   function syncPageMetadata(nextDocument) {
     document.title = nextDocument.title;
     if (nextDocument.documentElement.lang) {
@@ -444,7 +414,7 @@
         await appendScript(script, pageUrl);
       }
 
-      await waitForVisibleContent([header, main, footer]);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
       if (addHistoryEntry) {
         window.history.pushState({ kxcraftSpa: true }, "", pageUrl.href);
       }
