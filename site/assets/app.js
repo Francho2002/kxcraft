@@ -34,9 +34,9 @@
     }
 
     status.textContent = copied
-      ? "¡Enlace copiado!"
+      ? ""
       : "No se pudo copiar. Permití el acceso al portapapeles y volvé a intentarlo.";
-    status.hidden = false;
+    status.hidden = copied;
   }
 
   copyButton.addEventListener("click", () => { void copyImportUrl(); });
@@ -278,7 +278,7 @@
   const pageFiles = new Set(["index.html", "mods.html", "schematics.html", "tienda.html"]);
   const basePath = new URL("./", window.location.href).pathname;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const transitionTime = reducedMotion ? 0 : 220;
+  const transitionTime = reducedMotion ? 0 : 120;
   let navigationActive = false;
 
   function waitForTransition(element) {

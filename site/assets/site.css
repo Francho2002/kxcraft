@@ -1324,7 +1324,7 @@ svg {
 .topbar,
 #main,
 .footer {
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition: opacity 120ms ease, transform 120ms ease;
 }
 
 body.kx-page-transition-out .topbar,
