@@ -86,8 +86,8 @@ function Assert-KxCraftImmutableModUrl([string]$Url, [string]$Relative, [string]
     $path = [Uri]::UnescapeDataString($downloadUrl.AbsolutePath)
     switch ($downloadUrl.Host) {
         'raw.githubusercontent.com' {
-            $pathMatch = [regex]::Match($path, '^/Francho2002/kxcraft/([0-9a-fA-F]{40})/binaries/mods/([^/]+\.jar)$')
-            if (!$pathMatch.Success -or $pathMatch.Groups[2].Value -cne $Filename) {
+            $pathMatch = [regex]::Match($path, '^/Francho2002/kxcraft/([0-9a-fA-F]{40})/binaries/mods/(?:((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)/)?([^/]+\.jar)$')
+            if (!$pathMatch.Success -or $pathMatch.Groups[3].Value -cne $Filename) {
                 throw "GitHub source must be a full-commit KxCraft raw URL whose filename matches the Packwiz record: $Relative"
             }
         }
@@ -379,10 +379,10 @@ catch { Stop-Launch $_.Exception.Message }
 $packUri = $null
 if (![Uri]::TryCreate($PackTomlUrl, [UriKind]::Absolute, [ref]$packUri) -or
     $packUri.Scheme -cne 'https' -or $packUri.Host -cne 'francho2002.github.io' -or
-    $packUri.AbsolutePath -cne '/kxcraft/pack/managed-3players/pack.toml' -or !$packUri.IsDefaultPort -or
+    $packUri.AbsolutePath -cne '/kxcraft/pack/KxCraft/pack.toml' -or !$packUri.IsDefaultPort -or
     ![string]::IsNullOrEmpty($packUri.UserInfo) -or ![string]::IsNullOrEmpty($packUri.Query) -or
-    ![string]::IsNullOrEmpty($packUri.Fragment) -or $packUri.AbsoluteUri -cne 'https://francho2002.github.io/kxcraft/pack/managed-3players/pack.toml') {
-    Stop-Launch 'Only the signed KxCraft managed-client Packwiz channel is accepted.'
+    ![string]::IsNullOrEmpty($packUri.Fragment) -or $packUri.AbsoluteUri -cne 'https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml') {
+    Stop-Launch 'Only the permanent KxCraft Packwiz URL is accepted.'
 }
 $bootstrap = Join-Path $minecraftDirectory 'packwiz-installer-bootstrap.jar'
 $installer = Join-Path $minecraftDirectory 'packwiz-installer.jar'
