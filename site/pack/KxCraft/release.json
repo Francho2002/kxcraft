@@ -27,7 +27,7 @@
   "securityBreachRuntimeValidation": "NOT_VALIDATED",
   "packageFileName": "KxCraft.zip",
   "packageVersion": "1.0.15",
-  "packageLength": 270510346,
-  "packageSha256": "26c6f2c26949b2529c98ca82f4f05ce57320682c78245211dbc6da900bee4e4a",
-  "packageUrl": "https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.15-final/KxCraft.zip"
+  "packageLength": 270511737,
+  "packageSha256": "c917ce6768a483f605b11f12915952343145d04ac8b05d1455045758c41e983e",
+  "packageUrl": "https://github.com/Francho2002/kxcraft/releases/download/kxc-1.0.15-hotfix1/KxCraft.zip"
 }

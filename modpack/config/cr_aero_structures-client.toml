@@ -1,0 +1,2 @@
+# Disable the Create Aeronautics Structures login message.
+showLoginMessage = false

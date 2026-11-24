@@ -1,13 +1,26 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
-    [ValidateSet('managed-3players')]
-    [string]$Channel = 'managed-3players'
+    [ValidateSet('KxCraft')]
+    [string]$Channel = 'KxCraft'
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $script:BootstrapVersion = '1.0.0'
 $script:ManifestUrl = 'https://francho2002.github.io/kxcraft/updater/manifest.json'
+$script:PackTomlUrl = 'https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml'
+$script:MigrationManifestSha256 = '227a68ff1abf61ae628f218a4c3687343035f949c72243fc94102ed57f4bb518'
+$script:MigrationOldPackTomlSha256 = 'f03a478f0cb1f978c620194347a726b3683fc33d0af232e2952270d3e90a8463'
+$script:MigrationKxCraftPackTomlSha256 = '6ec49aa98abea34141aa154743effd9ffb4df8d7953d4095891c946321adc920'
+$script:MigrationSequence = 4
+$script:MigrationUpdaterVersion = '1.0.2'
+$script:MigrationBundleUrl = 'https://raw.githubusercontent.com/Francho2002/kxcraft/ab6123a2458edb8b94d523b6dab4dd16edca5249/distribution-v1/updater/releases/1.0.2/KxCraft-Updater.zip'
+$script:MigrationBundleLength = 9540L
+$script:MigrationBundleSha256 = 'de0194d705b110bce20a5f86b04a3395db3897e325192145cefe7fd56dfc8b0b'
+$script:MigrationUpdaterFiles = @{
+    'KxCraft-Updater.ps1' = [pscustomobject]@{ Length = 26509L; Sha256 = '9d659b76e6ac9ca659da060766df9fa51391bcb5cdc3c02bbaedceddd1ed8b07' }
+    'KxCraft-ManagedFiles.ps1' = [pscustomobject]@{ Length = 11056L; Sha256 = 'a8cd2c439a46ba87bb5c05d8378a9f1c6a01b900e0fccd4aaa9de34e1325483d' }
+}
 $script:TrustedPublicKeyCspBase64 = 'BgIAAACkAABSU0ExAAwAAAEAAQDVrdlpxrI2oXoq+UeXGeQ9a6ZCUBQCzZeUVC+LuuAEWkxhow3Wh2j3ONqSmRjMXEYahLTiarUlusmPKKyxnbieAlxrqb5R6NMNaf+YSVvttw6sTs2o0lFm1Q3oWAwtjfw65vG4QNd/YNmJDTDT2zMS/mnvBArpRz5uR7+fa8b4zeitHOwCatpxDPX1J0lgTJ0ZiLh7ntAlUQc2yvuFvGkO+d4yC0xH1yvdKmszkFKDokAeRWXYOLPL3oQSev1Dkv8jJdDls+21v7NxwJOQMKO0V62V8GMVrGvyYLgp2SWUfDNSjdYRMMHe4DLGtK4ybLmUbOR1IeFN47LtJHsYd7HTYpyAifziHRJuzwbW11lrY7eXs11TTm6UDw86iaY7djcDXb/GSvVYQ+FtKoZMuZikzUgCvOi1+bdPnG6cz2oKen8WL8xiVojAX6tCifGp9RkBjpS2H3rdJdqUFPuwh7AMgfbWmwYMkWmELl8ZZgfeBwEBGQzDp3NQsBz3SimpO7k='
 $script:MaximumManifestBytes = 262144
 $script:MaximumBundleBytes = 4194304
@@ -108,15 +121,53 @@ function Get-KxChannelManifest([byte[]]$ManifestBytes) {
         $expectedFiles[$path] = [pscustomobject]@{ Sha256 = [string]$file.sha256; Length = $length }
     }
     if ($expectedFiles.Values -contains $null) { throw 'Updater manifest omits a required local file.' }
-    if (!$json.channels.PSObject.Properties[$Channel]) { throw 'This updater manifest does not provide the selected KxCraft channel.' }
-    $channelInfo = $json.channels.$Channel
+    $channelProperties = @($json.channels.PSObject.Properties | Where-Object { $_.MemberType -eq 'NoteProperty' })
+    if ($Channel -cne 'KxCraft') { throw 'Only the permanent KxCraft channel is supported.' }
+    if ($channelProperties.Count -eq 1 -and $channelProperties[0].Name -ceq 'KxCraft') {
+        $channelInfo = $json.channels.KxCraft
+    }
+    elseif ($channelProperties.Count -eq 1 -and (Get-KxSha256Bytes $ManifestBytes) -ceq $script:MigrationManifestSha256) {
+        # One-time bridge for the exact signed sequence-3 manifest already live.
+        # Do not use its obsolete channel or Updater 1.0.1 pins: this Bootstrap
+        # carries the immutable 1.0.2 bundle and permanent KxCraft route pins.
+        $priorChannel = $channelProperties[0].Value
+        if ($sequence -ne 3 -or [string]$json.updaterVersion -cne '1.0.1' -or [string]$priorChannel.packVersion -cne '1.0.11' -or
+            [string]$priorChannel.packTomlSha256 -cne $script:MigrationOldPackTomlSha256 -or [int]$priorChannel.modCount -ne 199) {
+            throw 'The signed pre-migration manifest does not match the pinned KxCraft transition state.'
+        }
+        $migrationBundleUri = [Uri]$script:MigrationBundleUrl
+        Assert-KxBootstrapHttps $migrationBundleUri 'bundle'
+        $migrationFilePins = [Collections.Generic.List[object]]::new()
+        foreach ($name in $script:MigrationUpdaterFiles.Keys) {
+            $pin = $script:MigrationUpdaterFiles[$name]
+            $migrationFilePins.Add([pscustomobject]@{ path=[string]$name; length=[long]$pin.Length; sha256=[string]$pin.Sha256 })
+        }
+        $migrationManifest = [pscustomobject]@{
+            schemaVersion = 1
+            state = 'PUBLISHED'
+            sequence = $script:MigrationSequence
+            minimumBootstrapVersion = '1.0.0'
+            updaterVersion = $script:MigrationUpdaterVersion
+            bundle = [pscustomobject]@{ url=$script:MigrationBundleUrl; length=$script:MigrationBundleLength; sha256=$script:MigrationBundleSha256 }
+            files = @($migrationFilePins.ToArray())
+            channels = [pscustomobject]@{ KxCraft=[pscustomobject]@{ packVersion='1.0.11'; packTomlUrl=$script:PackTomlUrl; packTomlSha256=$script:MigrationKxCraftPackTomlSha256; modCount=199 } }
+        }
+        $migrationFiles = @{}
+        foreach ($name in $script:MigrationUpdaterFiles.Keys) { $migrationFiles[[string]$name] = $script:MigrationUpdaterFiles[$name] }
+        return [pscustomobject]@{
+            Manifest=$migrationManifest; Sequence=$script:MigrationSequence; BundleUri=$migrationBundleUri; Files=$migrationFiles
+            PackUrl=$script:PackTomlUrl; PackHash=$script:MigrationKxCraftPackTomlSha256; ModCount=199; PackVersion='1.0.11'
+            TrustedManifestSha256=(Get-KxSha256Bytes $ManifestBytes); MigrationRequired=$true
+        }
+    }
+    else { throw 'The signed updater manifest must contain exactly the permanent KxCraft channel.' }
     $packUrl = [string]$channelInfo.packTomlUrl
-    if ($packUrl -cne 'https://francho2002.github.io/kxcraft/pack/managed-3players/pack.toml') { throw 'The configured Packwiz URL does not match the pinned KxCraft channel.' }
-    if (!(Test-KxSha256 ([string]$channelInfo.packTomlSha256))) { throw 'Managed Packwiz manifest SHA-256 is invalid.' }
+    if ($packUrl -cne $script:PackTomlUrl) { throw 'The configured Packwiz URL does not match the permanent KxCraft URL.' }
+    if (!(Test-KxSha256 ([string]$channelInfo.packTomlSha256))) { throw 'KxCraft Packwiz manifest SHA-256 is invalid.' }
     $modCount = 0
-    if (![int]::TryParse([string]$channelInfo.modCount, [ref]$modCount) -or $modCount -lt 1 -or $modCount -gt 512) { throw 'Managed Packwiz channel does not pin a valid bounded mod inventory.' }
-    if ([string]$channelInfo.packVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Managed Packwiz channel version is invalid.' }
-    return [pscustomobject]@{ Manifest=$json; Sequence=$sequence; BundleUri=$bundleUri; Files=$expectedFiles; PackUrl=$packUrl; PackHash=[string]$channelInfo.packTomlSha256; ModCount=$modCount }
+    if (![int]::TryParse([string]$channelInfo.modCount, [ref]$modCount) -or $modCount -lt 1 -or $modCount -gt 512) { throw 'KxCraft channel does not pin a valid bounded mod inventory.' }
+    if ([string]$channelInfo.packVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'KxCraft Packwiz version is invalid.' }
+    return [pscustomobject]@{ Manifest=$json; Sequence=$sequence; BundleUri=$bundleUri; Files=$expectedFiles; PackUrl=$packUrl; PackHash=[string]$channelInfo.packTomlSha256; ModCount=$modCount; PackVersion=[string]$channelInfo.packVersion; TrustedManifestSha256=(Get-KxSha256Bytes $ManifestBytes); MigrationRequired=$false }
 }
 
 function Write-KxAtomicJson([string]$Path, [object]$Value) {
@@ -186,6 +237,9 @@ try {
         catch { throw 'Local updater activation state is corrupt; preserved without changes.' }
         if ([int]$oldState.sequence -gt $release.Sequence) { throw 'Signed updater sequence is older than this installation; refusing rollback.' }
         if ([int]$oldState.sequence -eq $release.Sequence -and [string]$oldState.bundleSha256 -cne [string]$release.Manifest.bundle.sha256) { throw 'Signed updater sequence conflicts with the locally trusted version.' }
+        if ($release.MigrationRequired -and [int]$oldState.sequence -eq [int]$release.Sequence -and [string]$oldState.manifestSha256 -cne $script:MigrationManifestSha256) {
+            throw 'The pre-migration bridge is no longer accepted after the permanent sequence has been trusted.'
+        }
     }
 
     $versionKey = [string]$release.Manifest.updaterVersion + '-' + ([string]$release.Manifest.bundle.sha256).Substring(0,12)
@@ -222,7 +276,7 @@ try {
         }
     }
 
-    $newState = [pscustomobject]@{ schemaVersion=1; channel=$Channel; sequence=$release.Sequence; updaterVersion=[string]$release.Manifest.updaterVersion; bundleSha256=[string]$release.Manifest.bundle.sha256; installDirectoryName=$versionKey; manifestSha256=(Get-KxSha256Bytes $manifestBytes); activatedAtUtc=[DateTime]::UtcNow.ToString('o') }
+    $newState = [pscustomobject]@{ schemaVersion=1; channel=$Channel; sequence=$release.Sequence; updaterVersion=[string]$release.Manifest.updaterVersion; bundleSha256=[string]$release.Manifest.bundle.sha256; installDirectoryName=$versionKey; manifestSha256=[string]$release.TrustedManifestSha256; activatedAtUtc=[DateTime]::UtcNow.ToString('o') }
 
     $updaterPath = Join-Path $versionDirectory 'KxCraft-Updater.ps1'
     $powershell = Join-Path $PSHOME 'powershell.exe'
