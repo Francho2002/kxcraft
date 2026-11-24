@@ -280,7 +280,7 @@ Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bclass="kx-import
 Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The standalone auto-update paragraph must be removed.'
 $appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
 Assert ($appJs.Contains('copyButton.addEventListener("click"') -and $appJs.Contains('navigator.clipboard.writeText(importUrl)')) 'Only the copy button may initiate URL copying.'
-Assert ($appJs.Contains('document.execCommand("copy")') -and $appJs.Contains('¡Enlace copiado!') -and !$appJs.Contains('URL quedó seleccionada')) 'Button-triggered clipboard copy and confirmation are required without exposing a manual-selection fallback.'
+Assert ($appJs.Contains('document.execCommand("copy")') -and $appJs.Contains('No se pudo copiar.') -and !$appJs.Contains('¡Enlace copiado!') -and !$appJs.Contains('URL quedó seleccionada')) 'Button-triggered clipboard copy must retain error feedback without a success toast or manual-selection fallback.'
 Assert ($appJs.Contains('__kxcraftSpaNavigationInstalled') -and $appJs.Contains('history.pushState') -and $appJs.Contains('popstate') -and $appJs.Contains('waitForVisibleContent')) 'The site must use loaded-content SPA navigation with browser history.'
 $siteCss = [IO.File]::ReadAllText((Join-Path $root 'assets/site.css'))
 Assert ($siteCss.Contains('user-select: none !important') -and $siteCss.Contains('cursor: default !important') -and $siteCss.Contains('kx-page-transition-in-active')) 'Global text-selection suppression and SPA transition styles are required.'
