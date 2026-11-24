@@ -1,16 +1,12 @@
 (() => {
   "use strict";
-  // Catálogo de lectura: utiliza los importes publicados en HTML o la selección
-  // histórica guardada por V21. Nunca habilita edición de precios.
+  // Catálogo estático: los precios se publican junto con cada ficha en el HTML.
   const dataNode = document.getElementById("kxcraft-shop-products");
   const grid = document.getElementById("shop-grid");
   const count = document.getElementById("shop-count");
   const empty = document.getElementById("shop-empty");
-  const upload = document.getElementById("shop-backup-upload");
-  const importError = document.getElementById("shop-restore-error");
   if (!dataNode || !grid || !count || !empty) return;
 
-  const PRICE_KEY = "kxcraft-store-price-overrides-v1";
   const collator = new Intl.Collator("es-AR", { sensitivity:"base", numeric:true });
   const invalidPrices = new Set(["", "a definir", "por definir", "sin definir", "pendiente"]);
   const hasPrice = v => typeof v === "string" && !invalidPrices.has(v.trim().toLocaleLowerCase("es"));
@@ -40,20 +36,6 @@
   try { raw = JSON.parse(dataNode.textContent); } catch { return; }
   if (!Array.isArray(raw)) return;
   const items = raw.filter(x => x && typeof x.id === "string" && typeof x.title === "string" && typeof x.category === "string" && typeof x.price === "string");
-  const validIds = new Set(items.map(x => x.id));
-  const savedPrices = Object.create(null);
-  const mergePrices = (source) => {
-    if (!source || typeof source !== "object" || Array.isArray(source)) return 0;
-    let count = 0;
-    for (const [id, price] of Object.entries(source)) {
-      if (!validIds.has(id) || typeof price !== "string" || price.length > 80 || !price.trim()) continue;
-      savedPrices[id] = price;
-      count++;
-    }
-    return count;
-  };
-  try { mergePrices(JSON.parse(window.localStorage.getItem(PRICE_KEY) || "{}")); } catch { /* Unavailable storage, continue with static data. */ }
-  const price = item => Object.hasOwn(savedPrices, item.id) ? savedPrices[item.id] : item.price;
   const el = (tag, cls, value) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -111,36 +93,20 @@
     body.append(el("h2", "shop-card-name", item.title));
     if (typeof item.description === "string" && item.description.trim()) body.append(el("p", "shop-card-description", item.description));
     body.append(el("span", "shop-card-price-label", "Precio de construcción armada"));
-    body.append(el("strong", "shop-card-price", price(item)));
+    body.append(el("strong", "shop-card-price", item.price));
     const repairCost = Number.isInteger(item.repairCostArs) && item.repairCostArs >= 0 ? item.repairCostArs : 8000;
     body.append(el("span", "shop-card-repair", `Costo de reparación: ${new Intl.NumberFormat("es-AR").format(repairCost)} ARS`));
+    if (item.category === "Aeronaves") body.append(el("span", "shop-card-repair", "Disponibilidad: 1 unidad"));
     card.append(photo, body);
     return card;
   };
   const show = () => {
-    const priced = items.filter(item => hasPrice(price(item)));
-    priced.sort((a,b) => priceNumber(price(b)) - priceNumber(price(a)) || collator.compare(a.title,b.title));
+    const priced = items.filter(item => hasPrice(item.price));
+    priced.sort((a,b) => priceNumber(b.price) - priceNumber(a.price) || collator.compare(a.title,b.title));
     empty.hidden = priced.length > 0;
     const cards = priced.map(makeCard);
     grid.replaceChildren(...cards);
     count.textContent = `${cards.length} construcción${cards.length === 1 ? "" : "es"} con precio`;
   };
-  if (upload) upload.addEventListener("change", async () => {
-    const file = upload.files?.[0];
-    if (!file || file.size > 1000000) return;
-    if (importError) importError.hidden = true;
-    try {
-      const json = JSON.parse(await file.text());
-      const prices = Array.isArray(json?.prices)
-        ? Object.fromEntries(json.prices.filter(p => p && typeof p.id === "string" && typeof p.price === "string").map(p => [p.id,p.price]))
-        : json;
-      const restored = mergePrices(prices);
-      if (!restored) throw new Error("No se encontraron precios válidos para estas fichas.");
-      try { window.localStorage.setItem(PRICE_KEY, JSON.stringify(savedPrices)); } catch { /* session-only import is supported */ }
-      show();
-    } catch (err) {
-      if (importError) { importError.textContent = "No se pudo restaurar el respaldo: " + String(err.message || "archivo inválido"); importError.hidden = false; }
-    }
-  });
   show();
 })();
