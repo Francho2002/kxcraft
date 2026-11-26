@@ -23,6 +23,7 @@ if ([int]$preManifest.sequence -ge 4 -and $preChannelNames.Count -eq 1 -and $pre
 }
 $publicWebFiles = @(
     'index.html',
+    'corpse.html',
     'mods.html',
     'schematics.html',
     'tienda.html',
