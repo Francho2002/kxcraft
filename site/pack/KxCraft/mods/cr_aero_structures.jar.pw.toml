@@ -1,0 +1,8 @@
+name = "Create Aeronautics: Structures"
+filename = "cr_aero_structures.jar"
+side = "client"
+
+[download]
+url = "https://mediafilez.forgecdn.net/files/8399/115/cr_aero_structures.jar"
+hash-format = "sha256"
+hash = "bd0ce4ae06004482f21491ab26623b99cd0e7e97375c6c6f8f104092eca2b006"

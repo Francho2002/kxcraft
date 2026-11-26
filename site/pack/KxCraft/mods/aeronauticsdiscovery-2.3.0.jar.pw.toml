@@ -1,0 +1,8 @@
+name = "Create Aeronautics: Discovery"
+filename = "aeronauticsdiscovery-2.3.0.jar"
+side = "client"
+
+[download]
+url = "https://mediafilez.forgecdn.net/files/9819/274/aeronauticsdiscovery-2.3.0.jar"
+hash-format = "sha256"
+hash = "f84c16b01da7de19062a75e31898816a436352138a467e8a2f099aac166b00c3"

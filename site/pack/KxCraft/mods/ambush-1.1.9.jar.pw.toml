@@ -1,0 +1,8 @@
+name = "AMBUSH"
+filename = "ambush-1.1.9.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/9sJ2Gcnx/versions/7J7DosEm/ambush-1.1.9.jar"
+hash-format = "sha256"
+hash = "595dc48c5fefbec3a008f01b93598cbada1c5a1e80fc3cdbbd30c2ab53931314"

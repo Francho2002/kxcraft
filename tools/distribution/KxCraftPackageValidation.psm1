@@ -90,7 +90,7 @@ function Assert-KxPackageCoherence {
     param(
         [Parameter(Mandatory = $true)][string]$PackagePath,
         [Parameter(Mandatory = $true)][string]$BootstrapPath,
-        [Parameter(Mandatory = $true)][string]$ClientConfigPath,
+        [string]$InitialProfileSeedDirectory = '',
         [Parameter(Mandatory = $true)][string]$ManifestPath,
         [Parameter(Mandatory = $true)][string]$ManifestSignaturePath,
         [Parameter(Mandatory = $true)][string]$PublicKeyPath,
@@ -117,23 +117,36 @@ function Assert-KxPackageCoherence {
     $sourceBytes = [IO.File]::ReadAllBytes($BootstrapPath)
     $sourceText = [Text.UTF8Encoding]::new($false, $true).GetString($sourceBytes)
     Assert-KxBootstrapAndManifestPolicy -BootstrapText $sourceText -Manifest $manifest -ExpectedPackVersion $ExpectedPackVersion -ExpectedModCount $ExpectedModCount
-    $clientConfigBytes = [IO.File]::ReadAllBytes($ClientConfigPath)
-    $clientConfigText = [Text.UTF8Encoding]::new($false, $true).GetString($clientConfigBytes)
-    if (@([regex]::Matches($clientConfigText, '(?m)^showLoginMessage\s*=\s*false\s*$')).Count -ne 1 -or $clientConfigText -match '(?m)^showLoginMessage\s*=\s*true\s*$') {
-        throw 'Client Create Aeronautics Structures config must set showLoginMessage = false exactly once.'
-    }
 
     $archive = [IO.Compression.ZipFile]::OpenRead($PackagePath)
     try {
         $bootstrapEntries = @($archive.Entries | Where-Object { $_.FullName -ceq 'KxCraft/.minecraft/KxCraft-Bootstrap.ps1' })
         $configEntries = @($archive.Entries | Where-Object { $_.FullName -ceq 'KxCraft/instance.cfg' })
-        $clientConfigEntries = @($archive.Entries | Where-Object { $_.FullName -ceq 'KxCraft/.minecraft/config/cr_aero_structures-client.toml' })
-        if ($bootstrapEntries.Count -ne 1 -or $configEntries.Count -ne 1 -or $clientConfigEntries.Count -ne 1) { throw 'Package must contain exactly one instance.cfg, one Bootstrap, and one client Aeronautics Structures config.' }
+        if ($bootstrapEntries.Count -ne 1 -or $configEntries.Count -ne 1) { throw 'Package must contain exactly one instance.cfg and one Bootstrap.' }
         $packagedBootstrapBytes = Read-KxZipEntryBytes $bootstrapEntries[0]
         Assert-KxPackagedBootstrapBytes -SourceBytes $sourceBytes -PackagedBytes $packagedBootstrapBytes
-        $packagedClientConfigBytes = Read-KxZipEntryBytes $clientConfigEntries[0]
-        if ($packagedClientConfigBytes.Length -ne $clientConfigBytes.Length -or (Get-KxValidationSha256 $packagedClientConfigBytes) -cne (Get-KxValidationSha256 $clientConfigBytes)) {
-            throw 'Packaged client config bytes differ from the checked distribution source.'
+        $seedResults = @()
+        if (![string]::IsNullOrWhiteSpace($InitialProfileSeedDirectory)) {
+            $seedRoot = [IO.Path]::GetFullPath($InitialProfileSeedDirectory)
+            $seedMap = [ordered]@{
+                'options.txt' = 'KxCraft/.minecraft/options.txt'
+                'config/cr_aero_structures-client.toml' = 'KxCraft/.minecraft/config/cr_aero_structures-client.toml'
+                'config/ragdoll_corpse-common.toml' = 'KxCraft/.minecraft/config/ragdoll_corpse-common.toml'
+                'config/voicechat/voicechat-client.properties' = 'KxCraft/.minecraft/config/voicechat/voicechat-client.properties'
+                'resourcepacks/KxCraft-SimpleVoiceChat-es_ar.zip' = 'KxCraft/.minecraft/resourcepacks/KxCraft-SimpleVoiceChat-es_ar.zip'
+            }
+            foreach ($relative in $seedMap.Keys) {
+                $seedPath = Join-Path $seedRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))
+                if (!(Test-Path -LiteralPath $seedPath -PathType Leaf)) { throw "Required initial profile seed file is missing: $relative" }
+                $entries = @($archive.Entries | Where-Object { $_.FullName -ceq [string]$seedMap[$relative] })
+                if ($entries.Count -ne 1) { throw "Initial profile seed entry is missing or duplicated: $($seedMap[$relative])" }
+                $sourceSeedBytes = [IO.File]::ReadAllBytes($seedPath)
+                $packageSeedBytes = Read-KxZipEntryBytes $entries[0]
+                if ($sourceSeedBytes.Length -ne $packageSeedBytes.Length -or (Get-KxValidationSha256 $sourceSeedBytes) -cne (Get-KxValidationSha256 $packageSeedBytes)) {
+                    throw "Packaged initial profile seed differs from its checked source: $relative"
+                }
+                $seedResults += [pscustomobject]@{ Path = [string]$seedMap[$relative]; Sha256 = Get-KxValidationSha256 $packageSeedBytes }
+            }
         }
         $configBytes = Read-KxZipEntryBytes $configEntries[0]
         $configText = [Text.UTF8Encoding]::new($false, $true).GetString($configBytes)
@@ -146,7 +159,7 @@ function Assert-KxPackageCoherence {
             ModCount = [int]$manifest.channels.KxCraft.modCount
             PackTomlUrl = [string]$manifest.channels.KxCraft.packTomlUrl
             InstanceConfigSha256 = Get-KxValidationSha256 $configBytes
-            ClientConfigSha256 = Get-KxValidationSha256 $packagedClientConfigBytes
+            InitialProfileSeed = @($seedResults)
         }
     }
     finally { $archive.Dispose() }

@@ -1,0 +1,8 @@
+name = "Create: Hostile Skies"
+filename = "hostile_skies-0.2.6.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/78hqRjWm/versions/HaZ4GxKd/hostile_skies-0.2.6.jar"
+hash-format = "sha256"
+hash = "62ee3fbe63b19606c5accad4f19d7585ec0af97ca9173c858b76827a4d756ba4"

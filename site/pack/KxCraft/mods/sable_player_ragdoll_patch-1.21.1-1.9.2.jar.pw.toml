@@ -1,0 +1,8 @@
+name = "Sable: Ragdoll - Patch"
+filename = "sable_player_ragdoll_patch-1.21.1-1.9.2.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/4q2Q9rk1/versions/xooVwSQi/sable_player_ragdoll_patch-1.21.1-1.9.2.jar"
+hash-format = "sha256"
+hash = "f92bee92a674ab0b0c359333781de57f00f4a8a9d5b18393a6ab4d9f45766822"

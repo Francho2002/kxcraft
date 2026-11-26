@@ -9,6 +9,7 @@ param(
     [int]$ExpectedModCount = 0,
     [string]$PackageReleaseTag = '',
     [string]$PackageDisplayVersion = '',
+    [string]$InitialProfileSeedDirectory = '',
     [switch]$PackageOnly
 )
 
@@ -46,11 +47,31 @@ $bundleVersion=[string]$bundleManifest.updaterVersion
 if($bundleVersion -notmatch '^\d+\.\d+\.\d+$'){throw 'Updater manifest version is malformed.'}
 $bundlePath=Join-Path $CandidateRoot ('binaries\distribution-v1\updater\releases\'+$bundleVersion+'\KxCraft-Updater.zip')
 $bootstrapPath=Join-Path $PSScriptRoot 'KxCraft-Bootstrap.ps1'
-$clientAeroStructuresConfigPath=Join-Path $projectRoot 'modpack\config\cr_aero_structures-client.toml'
-if(!(Test-Path -LiteralPath $clientAeroStructuresConfigPath -PathType Leaf)){throw 'The approved client Create Aeronautics Structures config source is missing.'}
-$clientAeroStructuresConfigBytes=[IO.File]::ReadAllBytes($clientAeroStructuresConfigPath)
-$clientAeroStructuresConfigText=[Text.UTF8Encoding]::new($false,$true).GetString($clientAeroStructuresConfigBytes)
-if(@([regex]::Matches($clientAeroStructuresConfigText,'(?m)^showLoginMessage\s*=\s*false\s*$')).Count -ne 1 -or $clientAeroStructuresConfigText -match '(?m)^showLoginMessage\s*=\s*true\s*$'){throw 'Client Create Aeronautics Structures config must set showLoginMessage = false exactly once.'}
+$profileSeedFiles=@()
+if(![string]::IsNullOrWhiteSpace($InitialProfileSeedDirectory)){
+    $seedRoot=[IO.Path]::GetFullPath($InitialProfileSeedDirectory)
+    if(!(Test-Path -LiteralPath $seedRoot -PathType Container)){throw 'Initial profile seed directory is missing.'}
+    $seedMap=[ordered]@{
+        'options.txt'='KxCraft/.minecraft/options.txt'
+        'config/cr_aero_structures-client.toml'='KxCraft/.minecraft/config/cr_aero_structures-client.toml'
+        'config/ragdoll_corpse-common.toml'='KxCraft/.minecraft/config/ragdoll_corpse-common.toml'
+        'config/voicechat/voicechat-client.properties'='KxCraft/.minecraft/config/voicechat/voicechat-client.properties'
+        'resourcepacks/KxCraft-SimpleVoiceChat-es_ar.zip'='KxCraft/.minecraft/resourcepacks/KxCraft-SimpleVoiceChat-es_ar.zip'
+    }
+    $seedRootPrefix=$seedRoot.TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar,[IO.Path]::AltDirectorySeparatorChar))+[IO.Path]::DirectorySeparatorChar
+    $seedFiles=@(Get-ChildItem -LiteralPath $seedRoot -File -Recurse | ForEach-Object { $_.FullName.Substring($seedRootPrefix.Length).Replace([string][IO.Path]::DirectorySeparatorChar,'/') })
+    $unexpectedSeedFiles=@($seedFiles|Where-Object { $_ -notin @($seedMap.Keys) })
+    $missingSeedFiles=@($seedMap.Keys|Where-Object { $_ -notin $seedFiles })
+    if($unexpectedSeedFiles.Count -gt 0 -or $missingSeedFiles.Count -gt 0){throw "Initial profile seed must contain exactly the approved options, Aeronautics Structures and Ragdoll Corpse configs, voice config, and translation resourcepack. Unexpected: $($unexpectedSeedFiles -join ', '); missing: $($missingSeedFiles -join ', ')"}
+    $optionsPath=Join-Path $seedRoot 'options.txt'
+    $optionsText=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($optionsPath))
+    foreach($setting in @('lang:es_ar','renderDistance:12','simulationDistance:12')){if(@([regex]::Matches($optionsText,'(?m)^'+[regex]::Escape($setting)+'\r?$')).Count -ne 1){throw "Initial options.txt must contain exactly one '$setting'."}}
+    if($optionsText -notmatch '(?m)^resourcePacks:\["file/KxCraft-SimpleVoiceChat-es_ar\.zip"\]\r?$'){throw 'Initial options.txt must enable the KxCraft Simple Voice Chat Spanish resourcepack.'}
+    $voicePath=Join-Path $seedRoot 'config/voicechat/voicechat-client.properties'
+    $voiceText=[Text.UTF8Encoding]::new($false,$true).GetString([IO.File]::ReadAllBytes($voicePath))
+    if(@([regex]::Matches($voiceText,'(?m)^voice_chat_volume\s*=\s*3\.0\s*$')).Count -ne 1 -or @($voiceText -split '\r?\n'|Where-Object { $_ -match '^\s*[^#\s].*=' -and $_ -notmatch '^\s*voice_chat_volume\s*=' }).Count -gt 0){throw 'Initial voice config may set received voice volume to 3.0 only; preserve microphone/device preferences.'}
+    foreach($seedRelative in $seedMap.Keys){$seedPath=Join-Path $seedRoot ($seedRelative.Replace('/',[IO.Path]::DirectorySeparatorChar));$profileSeedFiles+=,[pscustomobject]@{Entry=[string]$seedMap[$seedRelative];Bytes=[IO.File]::ReadAllBytes($seedPath);Source=$seedPath}}
+}
 $helperPath=Join-Path (Split-Path -Parent $PSScriptRoot) 'packwiz\KxCraft-ManagedFiles.ps1'
 $updaterPath=Join-Path $PSScriptRoot 'updater\KxCraft-Updater.ps1'
 $profile=Get-Content -LiteralPath $candidateJsonPath -Raw|ConvertFrom-Json -ErrorAction Stop
@@ -224,6 +245,7 @@ function Build-Package([string]$BaseZip,[string]$OutputZip){
         ('KxCraft/.minecraft/.kxcraft/updaters/KxCraft/'+$updaterInstallName+'/KxCraft-ManagedFiles.ps1')=$true
         'KxCraft/.minecraft/mods/'=$true
     }
+    foreach($seedFile in $profileSeedFiles){$newNames[$seedFile.Entry]=$true}
     if($PackageOnly){[void]$newNames.Remove('KxCraft/.minecraft/KxCraft-AutoUpdate-README.txt')}
     try{
         foreach($entry in $source.Entries){
@@ -243,7 +265,7 @@ function Build-Package([string]$BaseZip,[string]$OutputZip){
         if($cfg -notmatch '(?im)^PreLaunchCommand=') { throw 'Base Prism instance lacks a prelaunch command to replace.' }
         $cfg=[regex]::Replace($cfg,'(?im)^PreLaunchCommand=.*$',[System.Text.RegularExpressions.MatchEvaluator]{param($m) $prelaunch})
         Write-ZipBytes $target 'KxCraft/instance.cfg' ([Text.UTF8Encoding]::new($false).GetBytes($cfg));[void]$added.Add('KxCraft/instance.cfg')
-        Write-ZipBytes $target 'KxCraft/.minecraft/config/cr_aero_structures-client.toml' $clientAeroStructuresConfigBytes;[void]$added.Add('KxCraft/.minecraft/config/cr_aero_structures-client.toml')
+        foreach($seedFile in $profileSeedFiles){Write-ZipBytes $target $seedFile.Entry $seedFile.Bytes;[void]$added.Add($seedFile.Entry)}
         Write-ZipBytes $target 'KxCraft/.minecraft/.kxcraft-packwiz-state.json' ([Text.UTF8Encoding]::new($false).GetBytes((ConvertTo-Json -InputObject $initialState -Depth 20)));[void]$added.Add('KxCraft/.minecraft/.kxcraft-packwiz-state.json')
         if(!$PackageOnly){Write-ZipBytes $target 'KxCraft/.minecraft/KxCraft-AutoUpdate-README.txt' $readmeBytes;[void]$added.Add('KxCraft/.minecraft/KxCraft-AutoUpdate-README.txt')}
         Write-ZipBytes $target 'KxCraft/.minecraft/KxCraft-Bootstrap.ps1' $bootstrapBytes;[void]$added.Add('KxCraft/.minecraft/KxCraft-Bootstrap.ps1')
@@ -272,7 +294,7 @@ $candidatePackages=Split-Path -Parent $OutputZip
 if(!(Test-Path -LiteralPath $basePackage -PathType Leaf)){throw "Single KxCraft base ZIP is missing: $basePackage"}
 if(Test-Path -LiteralPath $OutputZip -PathType Leaf){throw "KxCraft ZIP candidate already exists; refusing overwrite: $OutputZip"}
 Build-Package $basePackage $OutputZip
-$packageCoherence=Assert-KxPackageCoherence -PackagePath $OutputZip -BootstrapPath $bootstrapPath -ClientConfigPath $clientAeroStructuresConfigPath -ManifestPath $bundleManifestPath -ManifestSignaturePath $manifestSignaturePath -PublicKeyPath $publicKeyPath -ExpectedPreLaunchCommand $prelaunchCommand -ExpectedPackVersion $packVersion -ExpectedModCount $expectedModCount
+$packageCoherence=Assert-KxPackageCoherence -PackagePath $OutputZip -BootstrapPath $bootstrapPath -InitialProfileSeedDirectory $InitialProfileSeedDirectory -ManifestPath $bundleManifestPath -ManifestSignaturePath $manifestSignaturePath -PublicKeyPath $publicKeyPath -ExpectedPreLaunchCommand $prelaunchCommand -ExpectedPackVersion $packVersion -ExpectedModCount $expectedModCount
 $zipHash=(Get-FileHash -LiteralPath $OutputZip -Algorithm SHA256).Hash.ToLowerInvariant()
 $zipLength=[long](Get-Item -LiteralPath $OutputZip).Length
 if($PackageOnly){

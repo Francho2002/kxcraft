@@ -1,29 +1,20 @@
-# KxCraft Pages release gate: signed sequence 4+ and permanent KxCraft-only channel.
+# KxCraft Pages release gate. Validates the single signed Packwiz channel and
+# rejects retired package choices or migration instructions from the public site.
 [CmdletBinding()]
 param(
     [string]$SiteRoot = 'site',
-    [switch]$AllowCandidate
+    [switch]$AllowCandidate,
+    [string]$PublicSourceHtmlPath = ''
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $root = [IO.Path]::GetFullPath($SiteRoot)
-$preManifestPath = Join-Path $root 'updater\manifest.json'
-if (!(Test-Path -LiteralPath $preManifestPath -PathType Leaf)) { throw 'Updater manifest is missing.' }
-$preManifest = Get-Content -LiteralPath $preManifestPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-$preChannelNames = @($preManifest.channels.PSObject.Properties | ForEach-Object { $_.Name })
-if ($preManifest.schemaVersion -ne 1 -or $preManifest.state -cne 'PUBLISHED') { throw 'Only a PUBLISHED updater manifest can be deployed.' }
-if ([int]$preManifest.sequence -ge 4 -and $preChannelNames.Count -eq 1 -and $preChannelNames[0] -ceq 'KxCraft') {
-    $deploymentPhase = 'Final'
-    $channels = @('KxCraft')
-    $primaryChannel = 'KxCraft'
-} else {
-    throw 'Pages accepts only a PUBLISHED sequence 4+ manifest for the permanent KxCraft-only channel.'
-}
+$projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
+$channels = @('KxCraft')
 $publicWebFiles = @(
     'index.html',
-    'corpse.html',
     'mods.html',
     'schematics.html',
     'tienda.html',
@@ -73,6 +64,12 @@ function Get-RelativeFile([string]$Base, [string]$Path) {
     return $full.Substring($prefix.Length).Replace('\', '/')
 }
 
+function Get-KxPackagePanelHtml([string]$Html, [string]$SourceName) {
+    $matches = [regex]::Matches($Html,'(?is)<article\b(?=[^>]*\bkx-play-panel--pack\b)[^>]*>.*?</article>')
+    Assert ($matches.Count -eq 1) "$SourceName must contain exactly one KxCraft package panel."
+    return $matches[0].Value
+}
+
 function Assert-AllowedPackPath([string]$Relative, [string]$Channel) {
     if ($Relative -match '(^|/)\.\.?(/|$)' -or $Relative.Contains(':') -or $Relative.StartsWith('/')) {
         throw "Unsafe Packwiz path: $Relative"
@@ -93,7 +90,9 @@ function Get-Provider([string]$Url, [string]$Relative) {
     $decoded = [Uri]::UnescapeDataString($uri.AbsolutePath)
     switch -CaseSensitive ($uri.Host.ToLowerInvariant()) {
         'raw.githubusercontent.com' {
-            Assert ($decoded -match '^/Francho2002/kxcraft/[0-9a-f]{40}/binaries/mods/(?:\d+\.\d+\.\d+/)?[^/]+\.jar$') "GitHub URL must pin a full KxCraft commit: $Relative"
+            $githubPath = [regex]::Match($decoded, '^/Francho2002/kxcraft/[0-9a-f]{40}/binaries/mods/(?:[0-9]+\.[0-9]+\.[0-9]+/)?(?<filename>[^/]+\.jar)$')
+            $expectedFilename = [IO.Path]::GetFileName($Relative) -replace '\.pw\.toml$', ''
+            Assert ($githubPath.Success -and $githubPath.Groups['filename'].Value -ceq $expectedFilename) "GitHub URL must pin a full KxCraft commit and the exact JAR filename: $Relative"
             return 'github'
         }
         'cdn.modrinth.com' {
@@ -119,6 +118,7 @@ function Test-PackChannel([string]$Channel, [hashtable]$ExpectedFiles) {
     $packText = [IO.File]::ReadAllText($packPath)
     $indexText = [IO.File]::ReadAllText($indexPath)
     $gate = Get-Content -LiteralPath $gatePath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+    Assert ((Get-TomlString $packText 'name') -ceq 'KxCraft') 'Packwiz pack.toml must identify the only KxCraft pack.'
     $packVersion = Get-TomlString $packText 'version'
     Assert ($packVersion -match '^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$') "Pack version is invalid in $Channel."
     Assert ([string]$gate.releaseVersion -ceq $packVersion) "release.json version mismatch in $Channel."
@@ -132,8 +132,15 @@ function Test-PackChannel([string]$Channel, [hashtable]$ExpectedFiles) {
     Assert ($indexHash -match '^[0-9a-f]{64}$') "index.toml hash is malformed in $Channel."
     Assert ((Get-Sha256 $indexPath) -ceq $indexHash) "index.toml hash mismatch in $Channel."
     Assert ($gate.schemaVersion -eq 1 -and ($gate.state -ceq 'PUBLISHED' -or ($AllowCandidate -and $gate.state -ceq 'CANDIDATE'))) "Release gate is not PUBLISHED in $Channel."
-    Assert ([string]$gate.packTomlUrl -ceq "https://francho2002.github.io/kxcraft/pack/$Channel/pack.toml") "Release gate URL mismatch in $Channel."
+    Assert ([string]$gate.packTomlUrl -ceq 'https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml') 'release.json changed the permanent KxCraft Packwiz URL.'
     Assert ([string]$gate.packTomlSha256 -ceq (Get-Sha256 $packPath)) "release.json does not pin pack.toml in $Channel."
+    $packageVersion = if ($gate.PSObject.Properties['packageVersion'] -and ![string]::IsNullOrWhiteSpace([string]$gate.packageVersion)) { [string]$gate.packageVersion } else { $packVersion }
+    Assert ($packageVersion -match '^\d+\.\d+\.\d+$') "release.json packageVersion is invalid in $Channel."
+    $expectedPackageUrls = @(
+        ('https://github.com/Francho2002/kxcraft/releases/download/kxc-' + $packageVersion + '/KxCraft.zip'),
+        ('https://github.com/Francho2002/kxcraft/releases/download/kxc-' + $packageVersion + '-final/KxCraft.zip')
+    )
+    Assert ([string]$gate.packageFileName -ceq 'KxCraft.zip' -and [long]$gate.packageLength -gt 0 -and [string]$gate.packageSha256 -match '^[0-9a-f]{64}$' -and [string]$gate.packageUrl -cin $expectedPackageUrls) "release.json must pin the exact KxCraft.zip version, byte length, SHA-256 and immutable release URL in $Channel."
     Assert ([int]$gate.exactSourceBlockerCount -eq 0 -and [int]$gate.zipSeededPreservedModCount -eq 0) "Release gate contains unresolved or locally preserved mods in $Channel."
     Assert ([string]$gate.rawBinaryCommit -match '^[0-9a-f]{40}$') "Release gate rawBinaryCommit is not immutable in $Channel."
     Assert ([string]$gate.sourceMapSha256 -match '^[0-9a-f]{64}$') "Release gate source-map hash is malformed in $Channel."
@@ -194,6 +201,10 @@ function Test-PackChannel([string]$Channel, [hashtable]$ExpectedFiles) {
 
 Assert (Test-Path -LiteralPath $root -PathType Container) 'Pages site root is missing.'
 foreach ($required in $publicWebFiles) { Assert (Test-Path -LiteralPath (Join-Path $root $required) -PathType Leaf) "Required public web file is missing: $required" }
+$packParent = Join-Path $root 'pack'
+Assert (Test-Path -LiteralPath $packParent -PathType Container) 'Pages pack directory is missing.'
+$packChildren = @(Get-ChildItem -LiteralPath $packParent -Force)
+Assert ($packChildren.Count -eq 1 -and $packChildren[0].PSIsContainer -and $packChildren[0].Name -ceq 'KxCraft') 'Only site/pack/KxCraft/ may exist; alternate channels and root files are rejected.'
 $allFiles = @(Get-ChildItem -LiteralPath $root -Recurse -File -Force)
 foreach ($file in $allFiles) { Assert (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0) "Symlink/reparse point is forbidden in Pages content: $($file.FullName)" }
 $actual = @($allFiles | ForEach-Object { Get-RelativeFile $root $_.FullName } | Sort-Object -Culture 'en-US')
@@ -214,38 +225,43 @@ foreach ($path in $actual) {
 
 $channelResults = @{}
 foreach ($channel in $channels) { $channelResults[$channel] = Test-PackChannel $channel $expected }
-$primary = $channelResults[$primaryChannel]
-Assert ($primary.Version -match '^\d+\.\d+\.\d+$' -and $primary.Mods -gt 0) 'The permanent KxCraft channel must have a valid Packwiz version and a nonzero inventory.'
+
 $manifestPath = Join-Path $root 'updater\manifest.json'
 $signaturePath = Join-Path $root 'updater\manifest.sig'
-$publicKeyPath = Join-Path $PSScriptRoot 'kxcraft-updater-public-key.spki.base64'
-foreach ($path in @($manifestPath,$signaturePath,$publicKeyPath)) { Assert (Test-Path -LiteralPath $path -PathType Leaf) "Updater publication file is missing: $path" }
+$publicKeyPath = Join-Path $projectRoot 'tools\distribution\updater\public-key.csp.base64'
+$bootstrapPath = Join-Path $projectRoot 'tools\distribution\KxCraft-Bootstrap.ps1'
+foreach ($path in @($manifestPath,$signaturePath,$publicKeyPath,$bootstrapPath)) { Assert (Test-Path -LiteralPath $path -PathType Leaf) "Updater publication file is missing: $path" }
 $manifestBytes = [IO.File]::ReadAllBytes($manifestPath)
 $manifest = [Text.UTF8Encoding]::new($false,$true).GetString($manifestBytes) | ConvertFrom-Json -ErrorAction Stop
 $signatureBytes = [Convert]::FromBase64String(([IO.File]::ReadAllText($signaturePath)).Trim())
-$keyBytes = [Convert]::FromBase64String(([IO.File]::ReadAllText($publicKeyPath)).Trim())
-$rsa = [Security.Cryptography.RSA]::Create()
+$publicKeyText = [IO.File]::ReadAllText($publicKeyPath).Trim()
+$bootstrapText = [IO.File]::ReadAllText($bootstrapPath)
+$bootstrapKeyPattern = '(?m)^\$script:TrustedPublicKeyCspBase64\s*=\s*''(?<key>[A-Za-z0-9+/=]+)''\s*$'
+$bootstrapKeyMatch = [regex]::Match($bootstrapText,$bootstrapKeyPattern)
+Assert ($bootstrapKeyMatch.Success -and $bootstrapKeyMatch.Groups['key'].Value -ceq $publicKeyText) 'The Bootstrap trust key and RSA signer public key differ.'
+$keyBytes = [Convert]::FromBase64String($publicKeyText)
+$rsa = New-Object Security.Cryptography.RSACryptoServiceProvider
 try {
-    $read = 0
-    $rsa.ImportSubjectPublicKeyInfo($keyBytes,[ref]$read)
-    Assert ($read -eq $keyBytes.Length) 'Updater public key contains unexpected trailing bytes.'
-    Assert ($rsa.VerifyData($manifestBytes,$signatureBytes,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) 'Updater manifest RSA signature is invalid.'
+    $rsa.PersistKeyInCsp = $false
+    $rsa.ImportCspBlob($keyBytes)
+    Assert ($rsa.VerifyData($manifestBytes,'SHA256',$signatureBytes)) 'Updater manifest RSA signature is invalid.'
 } finally { $rsa.Dispose() }
 Assert ($manifest.schemaVersion -eq 1 -and $manifest.state -ceq 'PUBLISHED') 'Updater manifest is not PUBLISHED.'
 Assert ([string]$manifest.updaterVersion -match '^\d+\.\d+\.\d+$') 'Updater version is malformed.'
-Assert ([int]$manifest.sequence -ge 4) 'Only the permanent KxCraft updater sequence 4 or later is accepted.'
+Assert ([int]$manifest.sequence -ge 1) 'Updater sequence is invalid.'
 Assert ([string]$manifest.bundle.url -match ('^https://raw\.githubusercontent\.com/Francho2002/kxcraft/[0-9a-f]{40}/distribution-v1/updater/releases/' + [regex]::Escape([string]$manifest.updaterVersion) + '/KxCraft-Updater\.zip$')) 'Updater bundle URL is not pinned to a complete immutable Git commit and its declared version.'
 Assert ([long]$manifest.bundle.length -gt 0 -and [string]$manifest.bundle.sha256 -match '^[0-9a-f]{64}$') 'Updater bundle integrity metadata is invalid.'
 Assert (@($manifest.files).Count -eq 2) 'Updater manifest must contain exactly two updater files.'
 foreach ($file in $manifest.files) { Assert ([string]$file.path -in @('KxCraft-Updater.ps1','KxCraft-ManagedFiles.ps1') -and [long]$file.length -gt 0 -and [string]$file.sha256 -match '^[0-9a-f]{64}$') 'Updater component pin is malformed.' }
-$manifestChannelNames = @($manifest.channels.PSObject.Properties | ForEach-Object { $_.Name })
-Assert ($manifestChannelNames.Count -eq 1 -and $manifestChannelNames[0] -ceq $primaryChannel) 'Updater manifest contains an unexpected channel.'
-$signedChannel = $manifest.channels.PSObject.Properties[$primaryChannel].Value
-if ($AllowCandidate -and [string]$primary.Gate.state -ceq 'CANDIDATE') {
-    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -match '^\d+\.\d+\.\d+$' -and [string]$signedChannel.packTomlUrl -ceq [string]$primary.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -match '^[0-9a-f]{64}$' -and [int]$signedChannel.modCount -gt 0) 'The signed updater manifest does not pin a valid prior published channel for this candidate.'
-    Assert ([version][string]$signedChannel.packVersion -lt [version][string]$primary.Version) 'A candidate must advance beyond the still-published signed Packwiz version.'
+$channelProperties = @($manifest.channels.PSObject.Properties | Where-Object { $_.MemberType -eq 'NoteProperty' })
+Assert ($channelProperties.Count -eq 1 -and $channelProperties[0].Name -ceq 'KxCraft') 'Signed Updater manifest must contain exactly the permanent KxCraft channel.'
+$kxcraft = $channelResults['KxCraft']
+$signedChannel = $manifest.channels.KxCraft
+if ($AllowCandidate -and [string]$kxcraft.Gate.state -ceq 'CANDIDATE') {
+    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -match '^\d+\.\d+\.\d+$' -and [string]$signedChannel.packTomlUrl -ceq [string]$kxcraft.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -match '^[0-9a-f]{64}$' -and [int]$signedChannel.modCount -gt 0) 'The signed updater manifest does not pin a valid prior published KxCraft Packwiz channel.'
+    Assert ([version][string]$signedChannel.packVersion -lt [version][string]$kxcraft.Version) 'A candidate must advance beyond the still-published signed KxCraft version.'
 } else {
-    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $primary.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$primary.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$primary.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $primary.Mods) 'Updater signature does not pin the exact published managed Packwiz channel.'
+    Assert ($null -ne $signedChannel -and [string]$signedChannel.packVersion -ceq $kxcraft.Version -and [string]$signedChannel.packTomlUrl -ceq [string]$kxcraft.Gate.packTomlUrl -and [string]$signedChannel.packTomlSha256 -ceq [string]$kxcraft.Gate.packTomlSha256 -and [int]$signedChannel.modCount -eq $kxcraft.Mods) 'Updater signature does not pin the exact published KxCraft Packwiz channel.'
 }
 $expected['updater/manifest.json'] = $true
 $expected['updater/manifest.sig'] = $true
@@ -254,43 +270,60 @@ foreach ($path in $actual) { Assert $expected.ContainsKey($path) "Unexpected pub
 foreach ($path in $expected.Keys) { Assert ($actual -contains $path) "Expected public file is missing: $path" }
 
 $html = [IO.File]::ReadAllText((Join-Path $root 'index.html'))
-$packagePanels = [regex]::Matches($html,'(?is)<article\b(?=[^>]*\bkx-play-panel--pack\b)[^>]*>.*?</article>')
-Assert ($packagePanels.Count -eq 1) 'The public page must contain exactly one KxCraft package panel.'
-$packagePanel = $packagePanels[0].Value
-$packageGate = $primary.Gate
-$packageVersion = [string]$packageGate.packageVersion
-$packageHash = [string]$packageGate.packageSha256
-$packageUrl = [string]$packageGate.packageUrl
-$latestImportUrl = 'https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip'
-Assert ([string]$packageGate.packageFileName -ceq 'KxCraft.zip' -and [long]$packageGate.packageLength -gt 0 -and $packageHash -match '^[0-9a-f]{64}$') 'The KxCraft ZIP release metadata is incomplete.'
-Assert ($packageVersion -match ('^'+[regex]::Escape([string]$primary.Version)+'(?: · Hotfix [0-9]+)?$')) 'The KxCraft ZIP package version does not match the Packwiz version.'
-Assert ($packageUrl -match ('^https://github\.com/Francho2002/kxcraft/releases/download/kxc-'+[regex]::Escape([string]$primary.Version)+'(?:-(?:final|hotfix[0-9]+))?/KxCraft\.zip$')) 'The KxCraft ZIP metadata must point to an immutable versioned release asset.'
-Assert ([regex]::Matches($packagePanel,'(?is)<span\b(?=[^>]*\bid="kxcraft-import-url")[^>]*>\s*'+[regex]::Escape($latestImportUrl)+'\s*</span>').Count -eq 1) 'The page must show the exact latest ZIP URL as non-selectable text.'
-Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bid="kxcraft-copy-button")(?=[^>]*\btype="button")(?=[^>]*\bclass="kx-import-copy-button")[^>]*>.*?</button>').Count -eq 1 -and [regex]::Matches($packagePanel,'(?is)<button\b').Count -eq 1) 'The import panel must contain only its accessible copy button.'
-Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*id="kxcraft-copy-status"[^>]*aria-live="polite"').Count -eq 1) 'The page must provide accessible copy confirmation and fallback status.'
-Assert ($packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'Manual ZIP download links are not allowed in the installation panel.'
-$visibleVersion = [regex]::Match($packagePanel,'(?is)Versión\s*(?:<span\s+data-kx-package-version>)?\s*(?<value>\d+\.\d+\.\d+)')
-Assert ($visibleVersion.Success -and [Net.WebUtility]::HtmlDecode($visibleVersion.Groups['value'].Value) -ceq [string]$primary.Version) 'Visible package version must show the base Packwiz version.'
-Assert ([regex]::Matches($packagePanel,'(?is)<li\b').Count -eq 3) 'Step 02 must contain exactly three instructions.'
-Assert ($packagePanel -notmatch '(?i)Hotfix') 'Hotfix labels must not appear in the public package panel.'
-Assert ([regex]::Matches($packagePanel,'(?is)<code\s+data-kx-package-sha256>'+[regex]::Escape($packageHash)+'</code>').Count -eq 1) 'Visible package SHA-256 differs from release.json.'
-foreach ($instruction in @('Instalá PrismLauncher-Cracked y creá tu perfil.','Add Instance → Importar','Pegá el enlace que está debajo. Los mods se descargarán y actualizarán automáticamente.')) { Assert ($packagePanel.Contains($instruction)) "Prism import instruction is missing: $instruction" }
-Assert ([regex]::Matches($packagePanel,'(?is)<p\b[^>]*class="kx-import-label">Enlace directo del modpack</p>').Count -eq 1) 'The import label must identify the KxCraft modpack.'
-Assert ($packagePanel -notmatch '(?is)kx-panel-update-note|El modpack se actualizará automáticamente al iniciar el juego\.') 'The unwanted upper-corner auto-update notice must be removed.'
-Assert ([regex]::Matches($packagePanel,'(?is)<button\b(?=[^>]*\bclass="kx-import-copy-button")[^>]*>\s*<svg\b').Count -eq 1) 'The import button must display its subtle copy icon.'
-Assert ($packagePanel -notmatch '(?is)<p\b[^>]*kx-auto-update-note|Todos los mods se descargarán y actualizarán automáticamente al iniciar el juego\.') 'The standalone auto-update paragraph must be removed.'
-$appJs = [IO.File]::ReadAllText((Join-Path $root 'assets/app.js'))
-Assert ($appJs.Contains('copyButton.addEventListener("click"') -and $appJs.Contains('navigator.clipboard.writeText(importUrl)')) 'Only the copy button may initiate URL copying.'
-Assert ($appJs.Contains('document.execCommand("copy")') -and $appJs.Contains('No se pudo copiar.') -and !$appJs.Contains('¡Enlace copiado!') -and !$appJs.Contains('URL quedó seleccionada')) 'Button-triggered clipboard copy must retain error feedback without a success toast or manual-selection fallback.'
-Assert ($appJs.Contains('__kxcraftSpaNavigationInstalled') -and $appJs.Contains('history.pushState') -and $appJs.Contains('popstate') -and $appJs.Contains('requestAnimationFrame') -and $appJs.Contains('prefers-reduced-motion')) 'The site must retain SPA navigation, browser history and reduced-motion support.'
-$siteCss = [IO.File]::ReadAllText((Join-Path $root 'assets/site.css'))
-Assert ($siteCss.Contains('user-select: none !important') -and $siteCss.Contains('cursor: default !important') -and $siteCss.Contains('kx-page-transition-in-active')) 'Global text-selection suppression and SPA transition styles are required.'
-foreach ($page in @('index.html','mods.html','schematics.html','tienda.html')) {
-    $pageHtml = [IO.File]::ReadAllText((Join-Path $root $page))
-    Assert ($pageHtml.Contains('assets/app.js')) "SPA navigation asset is missing from $page."
-}
-Assert ($html -match 'PrismLauncher-Cracked/releases/download/11\.1\.1/PrismLauncher-Windows-MinGW-w64-Setup-11\.1\.1\.exe') 'The PrismLauncher download in step 01 is missing.'
-Assert ($html -notmatch 'Descargá KxCraft\.zip e importalo|Descargar KxCraft\.zip') 'The old manual KxCraft ZIP download flow remains.'
-Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migración|private-3players|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
+$assetVersion = [string]$kxcraft.Version
+$assetPackageVersion = if ($kxcraft.Gate.PSObject.Properties['packageVersion'] -and ![string]::IsNullOrWhiteSpace([string]$kxcraft.Gate.packageVersion)) { [string]$kxcraft.Gate.packageVersion } else { $assetVersion }
+$expectedReleaseUrls = @(
+    ('https://github.com/Francho2002/kxcraft/releases/download/kxc-' + $assetPackageVersion + '/KxCraft.zip'),
+    ('https://github.com/Francho2002/kxcraft/releases/download/kxc-' + $assetPackageVersion + '-final/KxCraft.zip')
+)
+$expectedReleaseUrl = [string]$kxcraft.Gate.packageUrl
+$packagePanel = Get-KxPackagePanelHtml $html 'Public index.html'
+Assert ($expectedReleaseUrl -cin $expectedReleaseUrls) 'release.json must pin the immutable versioned KxCraft.zip asset.'
+$importUrl = 'https://github.com/Francho2002/kxcraft/releases/latest/download/KxCraft.zip'
+$visibleImportUrl = '(?is)<span\b(?=[^>]*\bid="kxcraft-import-url")(?=[^>]*\bclass="[^"]*\bkx-import-url\b[^"]*")[^>]*>\s*' + [regex]::Escape($importUrl) + '\s*</span>'
+$copyButton = '(?is)<button\b(?=[^>]*\bid="kxcraft-copy-button")(?=[^>]*\btype="button")[^>]*>'
+Assert ([regex]::Matches($packagePanel,$visibleImportUrl).Count -eq 1 -and [regex]::Matches($packagePanel,$copyButton).Count -eq 1 -and $packagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'The package panel must expose the exact latest ZIP import URL and one copy button, without a manual ZIP download link.'
+$displayedPackageHashes = [regex]::Matches($packagePanel,'(?is)<code\b(?=[^>]*\bdata-kx-package-sha256\b)[^>]*>(?<sha>[0-9a-f]{64})</code>')
+Assert ($displayedPackageHashes.Count -eq 1 -and $displayedPackageHashes[0].Groups['sha'].Value.ToLowerInvariant() -ceq [string]$kxcraft.Gate.packageSha256) 'The public page must display the exact SHA-256 pinned for KxCraft.zip.'
+Assert ([regex]::Matches($packagePanel,$copyButton).Count -eq 1) 'The page must contain exactly one KxCraft import copy control.'
+Assert ($html -notmatch '(?i)KxCraft(?:[- ]Lite|[- ]Full|[- ]Migrator)|migrador|migraci\u00F3n|KxCraft-FULL') 'Retired Lite/Full/migrator distribution text remains on the public page.'
+Assert ($html -match 'Los mods se descargar\u00E1n y actualizar\u00E1n autom\u00E1ticamente\.') 'The public installation instructions do not describe the automatic Packwiz flow.'
 
-Write-Output ("PASS: Pages $deploymentPhase release; channel=$primaryChannel version=$($primary.Version) mods=$($primary.Mods) entries=$($primary.Entries); signed Updater, package version/hash, button-only copy, SPA navigation and no manual download checks passed.")
+$retiredChannelTokens = @(('private-' + '3players'), ('managed-' + '3players'))
+$permanentPackTomlUrl = 'https://francho2002.github.io/kxcraft/pack/KxCraft/pack.toml'
+$routePinnedFiles = @(
+    'tools/distribution/KxCraft-Bootstrap.ps1',
+    'tools/distribution/updater/KxCraft-Updater.ps1',
+    'tools/distribution/updater/Build-KxCraftUpdaterSource.ps1',
+    'tools/distribution/updater/Sign-KxCraftUpdaterPublishedManifest.ps1',
+    'tools/distribution/Build-KxCraftSelfUpdatingPackages.ps1',
+    'tools/distribution/Publicar-KxCraft.ps1',
+    'tools/packwiz/KxCraft-PreLaunch.ps1',
+    'tools/packwiz/Prism-PreLaunchCommand.template.txt'
+)
+$activeDistributionFiles = @($routePinnedFiles + @(
+    '.github/scripts/kxcraft-updater-public-key.spki.base64',
+    'tools/packwiz/KxCraft-ManagedFiles.ps1',
+    'tools/distribution/updater/public-key.csp.base64',
+    'web/public/index.html'
+) | Select-Object -Unique)
+foreach ($relative in $activeDistributionFiles) {
+    $path = Join-Path $projectRoot $relative.Replace('/', [IO.Path]::DirectorySeparatorChar)
+    Assert (Test-Path -LiteralPath $path -PathType Leaf) "Active KxCraft distribution source is missing: $relative"
+    $text = [IO.File]::ReadAllText($path)
+    foreach ($retired in $retiredChannelTokens) { Assert (!$text.Contains($retired)) "Retired Packwiz path remains in active source: $relative" }
+}
+foreach ($relative in $routePinnedFiles) {
+    $path = Join-Path $projectRoot $relative.Replace('/',[IO.Path]::DirectorySeparatorChar)
+    Assert (Test-Path -LiteralPath $path -PathType Leaf) "Permanent KxCraft route source is missing: $relative"
+    Assert ([IO.File]::ReadAllText($path).Contains($permanentPackTomlUrl)) "Permanent KxCraft Packwiz URL changed or is missing from: $relative"
+}
+$sourceHtmlPath = if ([string]::IsNullOrWhiteSpace($PublicSourceHtmlPath)) { Join-Path $projectRoot 'web\public\index.html' } else { [IO.Path]::GetFullPath($PublicSourceHtmlPath) }
+Assert (Test-Path -LiteralPath $sourceHtmlPath -PathType Leaf) 'Public HTML source path is missing.'
+$sourceHtml = [IO.File]::ReadAllText($sourceHtmlPath)
+$sourcePackagePanel = Get-KxPackagePanelHtml $sourceHtml 'Public HTML source'
+$expectedReleaseUrl = [string]$kxcraft.Gate.packageUrl
+Assert ($expectedReleaseUrl -cin $expectedReleaseUrls -and [regex]::Matches($sourcePackagePanel,$visibleImportUrl).Count -eq 1 -and [regex]::Matches($sourcePackagePanel,$copyButton).Count -eq 1 -and $sourcePackagePanel -notmatch '(?is)<a\b[^>]*href="[^"]*KxCraft\.zip') 'The KxCraft package panel in source HTML must expose the latest ZIP import URL and a copy button while release.json pins its immutable asset.'
+$sourceHashes = [regex]::Matches($sourcePackagePanel,'(?is)<code\b(?=[^>]*\bdata-kx-package-sha256\b)[^>]*>(?<sha>[0-9a-f]{64})</code>')
+Assert ($sourceHashes.Count -eq 1 -and $sourceHashes[0].Groups['sha'].Value.ToLowerInvariant() -ceq [string]$kxcraft.Gate.packageSha256) 'The public HTML source SHA-256 must match the KxCraft.zip release gate.'
+Write-Output ("PASS: Pages allowlist; one permanent KxCraft channel=$($kxcraft.Version)/$($kxcraft.Mods); index entries=$($kxcraft.Entries); RSA signature, immutable Updater pin, exclusive KxCraft URL, latest ZIP import URL/copy button, retired-channel exclusion and SHA-256 checks passed.")
