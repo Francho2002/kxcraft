@@ -312,16 +312,12 @@ $permanentPackTomlUrl = 'https://francho2002.github.io/kxcraft/pack/KxCraft/pack
 $routePinnedFiles = @(
     'tools/distribution/KxCraft-Bootstrap.ps1',
     'tools/distribution/updater/KxCraft-Updater.ps1',
-    'tools/distribution/updater/Build-KxCraftUpdaterSource.ps1',
     'tools/distribution/updater/Sign-KxCraftUpdaterPublishedManifest.ps1',
     'tools/distribution/Build-KxCraftSelfUpdatingPackages.ps1',
-    'tools/distribution/Publicar-KxCraft.ps1',
-    'tools/packwiz/KxCraft-PreLaunch.ps1',
-    'tools/packwiz/Prism-PreLaunchCommand.template.txt'
+    'tools/distribution/Publicar-KxCraft.ps1'
 )
 $activeDistributionFiles = @($routePinnedFiles + @(
     '.github/scripts/kxcraft-updater-public-key.spki.base64',
-    'tools/packwiz/KxCraft-ManagedFiles.ps1',
     'web/public/index.html'
 ) | Select-Object -Unique)
 foreach ($relative in $activeDistributionFiles) {
