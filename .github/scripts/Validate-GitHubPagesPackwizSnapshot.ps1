@@ -228,7 +228,7 @@ foreach ($channel in $channels) { $channelResults[$channel] = Test-PackChannel $
 
 $manifestPath = Join-Path $root 'updater\manifest.json'
 $signaturePath = Join-Path $root 'updater\manifest.sig'
-$publicKeyPath = Join-Path $projectRoot 'tools\distribution\updater\public-key.csp.base64'
+$publicKeyPath = Join-Path $PSScriptRoot 'kxcraft-updater-public-key.spki.base64'
 $bootstrapPath = Join-Path $projectRoot 'tools\distribution\KxCraft-Bootstrap.ps1'
 foreach ($path in @($manifestPath,$signaturePath,$publicKeyPath,$bootstrapPath)) { Assert (Test-Path -LiteralPath $path -PathType Leaf) "Updater publication file is missing: $path" }
 $manifestBytes = [IO.File]::ReadAllBytes($manifestPath)
@@ -238,14 +238,32 @@ $publicKeyText = [IO.File]::ReadAllText($publicKeyPath).Trim()
 $bootstrapText = [IO.File]::ReadAllText($bootstrapPath)
 $bootstrapKeyPattern = '(?m)^\$script:TrustedPublicKeyCspBase64\s*=\s*''(?<key>[A-Za-z0-9+/=]+)''\s*$'
 $bootstrapKeyMatch = [regex]::Match($bootstrapText,$bootstrapKeyPattern)
-Assert ($bootstrapKeyMatch.Success -and $bootstrapKeyMatch.Groups['key'].Value -ceq $publicKeyText) 'The Bootstrap trust key and RSA signer public key differ.'
+Assert ($bootstrapKeyMatch.Success) 'The Bootstrap RSA trust key is missing or malformed.'
 $keyBytes = [Convert]::FromBase64String($publicKeyText)
-$rsa = New-Object Security.Cryptography.RSACryptoServiceProvider
+$bootstrapKeyBytes = [Convert]::FromBase64String($bootstrapKeyMatch.Groups['key'].Value)
+Assert ($bootstrapKeyBytes.Length -ge 20 -and $bootstrapKeyBytes[0] -eq 6 -and $bootstrapKeyBytes[1] -eq 2 -and [Text.Encoding]::ASCII.GetString($bootstrapKeyBytes,8,4) -ceq 'RSA1') 'The Bootstrap CSP trust key is not a supported RSA public-key blob.'
+$modulusLength = [int]([BitConverter]::ToUInt32($bootstrapKeyBytes,12) / 8)
+Assert ($modulusLength -gt 0 -and $bootstrapKeyBytes.Length -eq 20 + $modulusLength) 'The Bootstrap CSP trust key has an invalid modulus length.'
+$trustedModulus = [byte[]]$bootstrapKeyBytes[20..($bootstrapKeyBytes.Length - 1)]
+[Array]::Reverse($trustedModulus)
+$trustedExponent = [BitConverter]::GetBytes([BitConverter]::ToUInt32($bootstrapKeyBytes,16))
+[Array]::Reverse($trustedExponent)
+while ($trustedExponent.Length -gt 1 -and $trustedExponent[0] -eq 0) { $trustedExponent = [byte[]]$trustedExponent[1..($trustedExponent.Length - 1)] }
+$trustedParameters = [Security.Cryptography.RSAParameters]::new()
+$trustedParameters.Modulus = $trustedModulus
+$trustedParameters.Exponent = $trustedExponent
+$rsa = [Security.Cryptography.RSA]::Create()
+$trustedRsa = [Security.Cryptography.RSA]::Create()
 try {
-    $rsa.PersistKeyInCsp = $false
-    $rsa.ImportCspBlob($keyBytes)
-    Assert ($rsa.VerifyData($manifestBytes,'SHA256',$signatureBytes)) 'Updater manifest RSA signature is invalid.'
-} finally { $rsa.Dispose() }
+    $read = 0
+    $rsa.ImportSubjectPublicKeyInfo($keyBytes,[ref]$read)
+    Assert ($read -eq $keyBytes.Length) 'Updater SPKI public key contains unexpected trailing bytes.'
+    $trustedRsa.ImportParameters($trustedParameters)
+    $signerParameters = $rsa.ExportParameters($false)
+    $bootstrapParameters = $trustedRsa.ExportParameters($false)
+    Assert ([Convert]::ToBase64String($signerParameters.Modulus) -ceq [Convert]::ToBase64String($bootstrapParameters.Modulus) -and [Convert]::ToBase64String($signerParameters.Exponent) -ceq [Convert]::ToBase64String($bootstrapParameters.Exponent)) 'The Bootstrap trust key and published RSA verification key differ.'
+    Assert ($rsa.VerifyData($manifestBytes,$signatureBytes,[Security.Cryptography.HashAlgorithmName]::SHA256,[Security.Cryptography.RSASignaturePadding]::Pkcs1)) 'Updater manifest RSA signature is invalid.'
+} finally { $rsa.Dispose(); $trustedRsa.Dispose() }
 Assert ($manifest.schemaVersion -eq 1 -and $manifest.state -ceq 'PUBLISHED') 'Updater manifest is not PUBLISHED.'
 Assert ([string]$manifest.updaterVersion -match '^\d+\.\d+\.\d+$') 'Updater version is malformed.'
 Assert ([int]$manifest.sequence -ge 1) 'Updater sequence is invalid.'
@@ -304,7 +322,6 @@ $routePinnedFiles = @(
 $activeDistributionFiles = @($routePinnedFiles + @(
     '.github/scripts/kxcraft-updater-public-key.spki.base64',
     'tools/packwiz/KxCraft-ManagedFiles.ps1',
-    'tools/distribution/updater/public-key.csp.base64',
     'web/public/index.html'
 ) | Select-Object -Unique)
 foreach ($relative in $activeDistributionFiles) {
