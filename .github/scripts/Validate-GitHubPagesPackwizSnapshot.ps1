@@ -313,8 +313,7 @@ $routePinnedFiles = @(
     'tools/distribution/KxCraft-Bootstrap.ps1',
     'tools/distribution/updater/KxCraft-Updater.ps1',
     'tools/distribution/updater/Sign-KxCraftUpdaterPublishedManifest.ps1',
-    'tools/distribution/Build-KxCraftSelfUpdatingPackages.ps1',
-    'tools/distribution/Publicar-KxCraft.ps1'
+    'tools/distribution/Build-KxCraftSelfUpdatingPackages.ps1'
 )
 $activeDistributionFiles = @($routePinnedFiles + @(
     '.github/scripts/kxcraft-updater-public-key.spki.base64',
