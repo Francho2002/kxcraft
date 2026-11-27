@@ -1,0 +1,9 @@
+name = "Fieldframe"
+filename = "Fieldframe-1.21.1-neoforge-0.2.3.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9511/370/Fieldframe-1.21.1-neoforge-0.2.3.jar"
+hash-format = "sha256"
+hash = "e513f7e0d834da051bd1d222f826d886f083ac65ec419fff9a517467959d6ab4"
+

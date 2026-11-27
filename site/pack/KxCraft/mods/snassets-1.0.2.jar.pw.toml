@@ -1,0 +1,9 @@
+name = "SnAssets"
+filename = "snassets-1.0.2.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/E40iGlJ7/versions/iBTikNyJ/snassets-1.0.2.jar"
+hash-format = "sha256"
+hash = "63b86ba4b0f837202a867b14b9b1b2b77448fb79cfa531af7f2005a574c36bc7"
+

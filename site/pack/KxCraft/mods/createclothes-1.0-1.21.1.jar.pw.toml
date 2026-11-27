@@ -1,0 +1,9 @@
+name = "Create: Clothes"
+filename = "createclothes-1.0-1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/htYLZ8Hw/versions/AaCECJnd/createclothes-1.0-1.21.1.jar"
+hash-format = "sha256"
+hash = "0cadc80c08934316902208c7957317fb019d82f404b80f4037def04d28a85010"
+

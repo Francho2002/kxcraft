@@ -1,8 +1,0 @@
-name = "RadioFM"
-filename = "RadioFM-1.2.0+1.21.1.neoforge.jar"
-side = "client"
-
-[download]
-url = "https://cdn.modrinth.com/data/2491H6Zq/versions/f9hH0tya/RadioFM-1.2.0%2B1.21.1.neoforge.jar"
-hash-format = "sha256"
-hash = "56faa7080274e2f8ec639346d2b170d8784e420dec56710ad82e4ca3dae8b690"
