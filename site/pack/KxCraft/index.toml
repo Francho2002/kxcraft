@@ -989,3 +989,32 @@ metafile = true
 file = "mods/YungsApi-1.21.1-NeoForge-5.1.9.jar.pw.toml"
 hash = "72ab41a09bf8b5b64787880fef38c9a32232abeafc07bb17f5650659e6d769a0"
 metafile = true
+[[files]]
+file = "mods/RadioFM-1.2.0+1.21.1.neoforge.jar.pw.toml"
+hash = "24a56e4c9ccfbd239ba48306d195ceddf5d10c3b8e29cb0c8812c8e86156d80e"
+metafile = true
+
+[[files]]
+file = "mods/seaeater-2.0.0+mc1.21.1.jar.pw.toml"
+hash = "d1319b65e21a76f7b1d986a9644ed4dc4cbbb6be797c9d787eacc73ddcfc85b0"
+metafile = true
+
+[[files]]
+file = "mods/fallingleaves-1.21.1-2.6.0.jar.pw.toml"
+hash = "44ec8fc5bc716c16aef0f2f7ab8e1cdb41b2281f4f1ea0efa5c46425227e976d"
+metafile = true
+
+[[files]]
+file = "mods/picturemode-neoforge-1.1.8+1.21.1.jar.pw.toml"
+hash = "1ff4610f3be3ed49ca50eec0fa732c85da905022bb93c9c6a9f1bf352c721940"
+metafile = true
+
+[[files]]
+file = "mods/create_aeronautics_toolgun-0.3.9.jar.pw.toml"
+hash = "ff565f9bddb41d90d3e82914b2ba7835b612be7166e534bd33cc5ef489ee4c97"
+metafile = true
+
+[[files]]
+file = "mods/twoplayersonehorse-neoforge-1.21.1-1.0.2.jar.pw.toml"
+hash = "bb610c5dc56347fbe331ad40877c2b621f30ba02e81f9aa8fb3c99dcb3ef3abd"
+metafile = true

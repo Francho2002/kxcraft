@@ -92,12 +92,6 @@
     body.append(el("span", "shop-card-category", item.category));
     body.append(el("h2", "shop-card-name", item.title));
     if (typeof item.description === "string" && item.description.trim()) body.append(el("p", "shop-card-description", item.description));
-    const missingMods = Array.isArray(item.missingMods) ? [...new Set(item.missingMods.filter(v => typeof v === "string" && v.trim()))] : [];
-    if (missingMods.length) {
-      const missingNote = el("p", "shop-card-missing-mods");
-      missingNote.append(el("strong", "", "Mods faltantes: "), document.createTextNode(missingMods.join(", ")));
-      body.append(missingNote);
-    }
     body.append(el("span", "shop-card-price-label", "Precio de construcción armada"));
     body.append(el("strong", "shop-card-price", item.price));
     const repairCost = Number.isInteger(item.repairCostArs) && item.repairCostArs >= 0 ? item.repairCostArs : 8000;

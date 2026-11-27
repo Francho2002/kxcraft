@@ -1388,24 +1388,3 @@ body.kx-page-transition-in-active .footer {
     transition: none !important;
   }
 }
-
-
-/* KxCraft 1.0.17 candidate: retired schematic dependencies */
-.schematics-impact { margin: 16px 0 20px; border: 1px solid var(--line); border-radius: 8px; background: rgba(25, 29, 23, .72); }
-.schematics-impact > summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 12px 14px; color: var(--gold); cursor: pointer; font-weight: 700; }
-.schematics-impact-count { color: var(--muted); font-size: 12px; font-weight: 600; }
-.schematics-impact-content { padding: 0 14px 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.schematics-impact-content > p { margin: 0 0 12px; }
-.schematics-impact-group { padding: 10px 0; border-top: 1px solid var(--line); }
-.schematics-impact-group h3 { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 7px; color: var(--text); font-size: 13px; }
-.schematics-impact-group h3 span { color: var(--soft); font-weight: 500; }
-.schematics-impact-group ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; }
-.schematics-impact-group li { padding-left: 2px; }
-.schematics-impact-group a { color: var(--gold); text-decoration: none; }
-.schematics-impact-group a:hover { text-decoration: underline; }
-.schematics-missing-pill { display: inline-block; margin-left: 8px; padding: 1px 6px; color: var(--soft); border: 1px solid var(--line); border-radius: 999px; font-size: 10px; }
-.schematics-impact-source-note { color: var(--soft); }
-.shop-card-missing-mods { margin: -7px 0 12px; color: var(--soft); font-size: 11px; line-height: 1.45; }
-.shop-card-missing-mods strong { color: var(--gold); }
-.candidate-private-notice { margin: 12px 0; padding: 9px 12px; color: #f2d6a6; background: rgba(180, 92, 58, .12); border: 1px solid rgba(232, 201, 145, .32); border-radius: 6px; font-size: 12px; }
-@media (max-width: 640px) { .schematics-impact > summary { align-items: flex-start; flex-direction: column; } .schematics-missing-pill { margin: 4px 0 0; } }

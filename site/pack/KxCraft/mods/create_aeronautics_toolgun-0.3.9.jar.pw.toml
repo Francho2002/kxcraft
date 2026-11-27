@@ -1,0 +1,8 @@
+name = "Create Aeronautics: Toolgun"
+filename = "create_aeronautics_toolgun-0.3.9.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9472/360/create_aeronautics_toolgun-0.3.9.jar"
+hash-format = "sha256"
+hash = "8760fa997cadb324dbfdf2106b3035b8360e5fc6889b8f43a54f24171b31267f"

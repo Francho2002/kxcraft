@@ -1,0 +1,8 @@
+name = "Picture Mode"
+filename = "picturemode-neoforge-1.1.8+1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://cdn.modrinth.com/data/kFU5UCQz/versions/GoEQFc6b/picturemode-neoforge-1.1.8%2B1.21.1.jar"
+hash-format = "sha256"
+hash = "c52a1a79b89c8f0221d6515813969fe5d2e6679913941a8b7d7b3b38167aa111"

@@ -200,11 +200,6 @@
         dialogVideo.append(findVideos);
       }
     }
-    if (dialogVideo && mod.detailsUrl && /^[a-z0-9_-]+\.html$/i.test(mod.detailsUrl)) {
-      const detailsLink = makeElement("a", "dialog-video-link", "Ver ficha completa del mod ↗");
-      detailsLink.href = mod.detailsUrl;
-      dialogVideo.append(detailsLink);
-    }
     dialog.showModal();
   }
 

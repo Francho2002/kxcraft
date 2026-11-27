@@ -1,0 +1,8 @@
+name = "Sea Myths"
+filename = "seaeater-2.0.0+mc1.21.1.jar"
+side = "client"
+
+[download]
+url = "https://edge.forgecdn.net/files/9095/898/seaeater-2.0.0%2Bmc1.21.1.jar"
+hash-format = "sha256"
+hash = "ae6792d356a313aebf2794ec2bcca080d7300182c7635a315a86e8c34be2a2d7"
